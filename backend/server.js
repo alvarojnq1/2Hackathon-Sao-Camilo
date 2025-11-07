@@ -31,11 +31,11 @@ app.use(cors({
 
 // Importações DEPOIS do dotenv.config()
 import authRoutes from "./auth.js";
-import profileRoutes from "./profile.js";
+import profileRoutes from "./profile.js"; // ✅ APENAS UMA VEZ
 
-// Rotas
+// Rotas - ✅ CORRETO: use o prefixo /api
 app.use("/auth", authRoutes);
-app.use("/api", profileRoutes);
+app.use("/api", profileRoutes); // ✅ Todas as rotas de profile começam com /api
 
 // Rota de saúde
 app.get("/health", (req, res) => {
@@ -61,4 +61,5 @@ app.listen(PORT, () => {
   console.log(`🚀 Backend rodando na porta ${PORT}`);
   console.log(`🌐 Health check: http://localhost:${PORT}/health`);
   console.log(`🗄️  Teste DB: http://localhost:${PORT}/test-db`);
+  console.log(`👤 Rota do perfil: http://localhost:${PORT}/api/perfil`); // ✅ Note o /api
 });

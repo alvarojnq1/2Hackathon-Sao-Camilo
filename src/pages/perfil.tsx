@@ -1,5 +1,5 @@
 // pages/ProfilePage.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import { useNavigate } from 'react-router-dom';
 import '../ProfilePage.css';
@@ -21,12 +21,21 @@ const ProfilePage = () => {
   const [saving, setSaving] = useState(false);
   
   const navigate = useNavigate();
-  const API_BASE = "http://localhost:3001"; // Backend Node.js
-  const PYTHON_API_BASE = "http://localhost:8000"; // API Python
+  const API_BASE = "http://localhost:3000/api"; 
+  const PYTHON_API_BASE = "http://localhost:8000";
+
+  // Refs para animações GSAP
+  const profileContainerRef = useRef(null);
+  const headerRef = useRef(null);
+  const tabsRef = useRef(null);
+  const formRef = useRef(null);
+  const successRef = useRef(null);
 
   useEffect(() => {
     const loadUserProfile = async () => {
       setProfileLoading(true);
+      setError(null);
+      
       try {
         const token = localStorage.getItem('token');
         if (!token) {
@@ -34,6 +43,8 @@ const ProfilePage = () => {
           return;
         }
 
+        console.log('Buscando perfil do usuário...');
+        
         const response = await fetch(`${API_BASE}/perfil`, {
           method: 'GET',
           headers: {
@@ -42,11 +53,16 @@ const ProfilePage = () => {
           }
         });
 
+        console.log('Resposta do servidor:', response.status);
+
         if (!response.ok) {
-          throw new Error('Erro ao carregar perfil');
+          const errorText = await response.text();
+          console.error('Erro na resposta:', errorText);
+          throw new Error(`Erro ${response.status}: ${response.statusText}`);
         }
 
         const userProfile = await response.json();
+        console.log('Perfil carregado:', userProfile);
         
         // Atualiza os dados do usuário
         setUserData({
@@ -57,16 +73,13 @@ const ProfilePage = () => {
           diagnostico_previo: userProfile.diagnostico_previo || false,
         });
 
-        // Animação de entrada
-        const tl = gsap.timeline();
-        tl.fromTo('.profile-container',
-          { y: 50, opacity: 0 },
-          { y: 0, opacity: 1, duration: 0.8, ease: "power3.out" }
-        );
+        // Animação de entrada após carregar dados
+        animatePageEntrance();
 
       } catch (error) {
         console.error('Erro ao carregar perfil:', error);
-        setError('Erro ao carregar dados do perfil');
+        setError(`Erro ao carregar dados do perfil: ${error.message}`);
+        animateError();
       } finally {
         setProfileLoading(false);
       }
@@ -75,6 +88,61 @@ const ProfilePage = () => {
     loadUserProfile();
   }, [navigate]);
 
+  // Animação de entrada da página
+  const animatePageEntrance = () => {
+    const tl = gsap.timeline();
+    
+    tl.fromTo(headerRef.current,
+      { y: -50, opacity: 0 },
+      { y: 0, opacity: 1, duration: 0.8, ease: "power3.out" }
+    )
+    .fromTo(tabsRef.current,
+      { y: 30, opacity: 0 },
+      { y: 0, opacity: 1, duration: 0.6, ease: "back.out(1.7)" },
+      "-=0.4"
+    )
+    .fromTo(formRef.current,
+      { y: 50, opacity: 0 },
+      { y: 0, opacity: 1, duration: 0.8, ease: "power3.out" },
+      "-=0.3"
+    );
+  };
+
+  // Animação de erro
+  const animateError = () => {
+    gsap.fromTo('.error-message',
+      { scale: 0, opacity: 0 },
+      { 
+        scale: 1, 
+        opacity: 1, 
+        duration: 0.5, 
+        ease: "back.out(1.7)",
+        y: 0
+      }
+    );
+  };
+
+  // Animação de troca de tabs
+  const animateTabChange = (newTab) => {
+    const tl = gsap.timeline();
+    
+    tl.to('.tab-content > *', {
+      opacity: 0,
+      y: 20,
+      duration: 0.3,
+      ease: "power2.in",
+      onComplete: () => {
+        setActiveTab(newTab);
+      }
+    })
+    .to('.tab-content > *', {
+      opacity: 1,
+      y: 0,
+      duration: 0.4,
+      ease: "power2.out"
+    }, "+=0.1");
+  };
+
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -82,6 +150,9 @@ const ProfilePage = () => {
     
     try {
       const token = localStorage.getItem('token');
+      
+      console.log('Enviando atualização:', userData);
+      
       const response = await fetch(`${API_BASE}/perfil`, {
         method: 'PUT',
         headers: {
@@ -89,6 +160,8 @@ const ProfilePage = () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
+          data_nascimento: userData.data_nascimento,
+          sexo: userData.sexo,
           diagnostico_previo: userData.diagnostico_previo,
           painel_genetico: result?.painel_genetico?.total_percent || null
         })
@@ -96,45 +169,76 @@ const ProfilePage = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao atualizar perfil');
+        throw new Error(errorData.error || `Erro ${response.status} ao atualizar perfil`);
       }
 
       const resultData = await response.json();
+      console.log('Perfil atualizado com sucesso:', resultData);
       
       // Animação de sucesso
-      gsap.fromTo('.profile-success',
-        { scale: 0, opacity: 0 },
-        { 
-          scale: 1, 
-          opacity: 1, 
-          duration: 0.5, 
-          ease: "back.out(1.7)",
-          onComplete: () => {
-            setTimeout(() => {
-              gsap.to('.profile-success', {
-                scale: 0,
-                opacity: 0,
-                duration: 0.3
-              });
-            }, 3000);
-          }
-        }
-      );
-
-      console.log('Perfil atualizado:', resultData);
-
+      animateSuccess();
+      
     } catch (error) {
       console.error('Erro ao atualizar perfil:', error);
       setError(error.message);
+      animateError();
     } finally {
       setSaving(false);
     }
+  };
+
+  // Animação de sucesso
+  const animateSuccess = () => {
+    const successElement = document.querySelector('.profile-success');
+    
+    gsap.fromTo(successElement,
+      { 
+        scale: 0, 
+        opacity: 0,
+        y: -50 
+      },
+      { 
+        scale: 1, 
+        opacity: 1,
+        y: 0,
+        duration: 0.6, 
+        ease: "back.out(1.7)",
+        onComplete: () => {
+          // Adiciona pulso contínuo
+          gsap.to(successElement, {
+            scale: 1.05,
+            duration: 0.5,
+            repeat: -1,
+            yoyo: true,
+            ease: "power1.inOut"
+          });
+          
+          setTimeout(() => {
+            gsap.to(successElement, {
+              scale: 0,
+              opacity: 0,
+              duration: 0.4,
+              ease: "power2.in",
+              onComplete: () => {
+                gsap.killTweensOf(successElement);
+              }
+            });
+          }, 3000);
+        }
+      }
+    );
   };
 
   const onFileChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
       setFile(e.target.files[0]);
       setError(null);
+      
+      // Animação do arquivo selecionado
+      gsap.fromTo('.file-selected',
+        { scale: 0, opacity: 0 },
+        { scale: 1, opacity: 1, duration: 0.4, ease: "back.out(1.7)" }
+      );
     }
   };
 
@@ -145,15 +249,23 @@ const ProfilePage = () => {
 
     if (!file) {
       setError("Selecione um PDF primeiro.");
+      animateError();
       return;
     }
 
     try {
       setLoading(true);
+      
+      // Animação de loading
+      gsap.to('.btn-primary', {
+        scale: 0.95,
+        duration: 0.2,
+        ease: "power2.inOut"
+      });
+
       const formData = new FormData();
       formData.append("arquivo", file);
 
-      // Envia apenas o diagnóstico prévio do usuário atual
       const membrosFamilia = JSON.stringify([
         { 
           relacao: "paciente", 
@@ -179,15 +291,50 @@ const ProfilePage = () => {
       await updateProfileWithGeneticPanel(json.painel_genetico?.total_percent);
       
       // Animação de resultado
-      gsap.fromTo('.result-section',
-        { y: 30, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.6, ease: "back.out(1.7)" }
-      );
+      animateResults();
+      
     } catch (err) {
       setError(err?.message || "Erro desconhecido ao enviar.");
+      animateError();
     } finally {
       setLoading(false);
+      gsap.to('.btn-primary', {
+        scale: 1,
+        duration: 0.3,
+        ease: "back.out(1.7)"
+      });
     }
+  };
+
+  // Animação dos resultados
+  const animateResults = () => {
+    const tl = gsap.timeline();
+    
+    tl.fromTo('.result-section',
+      { y: 50, opacity: 0 },
+      { y: 0, opacity: 1, duration: 0.8, ease: "power3.out" }
+    )
+    .fromTo('.result-card',
+      { 
+        scale: 0.8, 
+        opacity: 0,
+        rotationY: -15 
+      },
+      { 
+        scale: 1, 
+        opacity: 1,
+        rotationY: 0,
+        duration: 0.6,
+        stagger: 0.2,
+        ease: "back.out(1.7)"
+      },
+      "-=0.4"
+    )
+    .fromTo('.message-card',
+      { y: 30, opacity: 0 },
+      { y: 0, opacity: 1, duration: 0.5, ease: "power2.out" },
+      "-=0.3"
+    );
   };
 
   const updateProfileWithGeneticPanel = async (painelPercent) => {
@@ -215,6 +362,18 @@ const ProfilePage = () => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+
+    // Animação sutil no input alterado
+    if (type !== 'checkbox') {
+      gsap.fromTo(e.target, 
+        { scale: 1 },
+        { scale: 1.02, duration: 0.1, yoyo: true, repeat: 1 }
+      );
+    }
+  };
+
+  const handleTabClick = (tab) => {
+    animateTabChange(tab);
   };
 
   if (profileLoading) {
@@ -233,29 +392,28 @@ const ProfilePage = () => {
   return (
     <div className="App">
       <div className="container">
-        <div className="profile-container">
-          <div className="profile-header">
+        <div className="profile-container" ref={profileContainerRef}>
+          <div className="profile-header" ref={headerRef}>
             <h1>Meu Perfil</h1>
             <p>Gerencie suas informações pessoais e exames genéticos</p>
-            
           </div>
 
-          <div className="profile-tabs">
+          <div className="profile-tabs" ref={tabsRef}>
             <button 
               className={`tab-button ${activeTab === 'profile' ? 'active' : ''}`}
-              onClick={() => setActiveTab('profile')}
+              onClick={() => handleTabClick('profile')}
             >
               👤 Informações Pessoais
             </button>
             <button 
               className={`tab-button ${activeTab === 'exams' ? 'active' : ''}`}
-              onClick={() => setActiveTab('exams')}
+              onClick={() => handleTabClick('exams')}
             >
               🧬 Upload de Exames
             </button>
           </div>
 
-          <div className="tab-content">
+          <div className="tab-content" ref={formRef}>
             {activeTab === 'profile' && (
               <div className="profile-form-section">
                 <form onSubmit={handleProfileUpdate} className="profile-form">
@@ -296,7 +454,7 @@ const ProfilePage = () => {
                         type="date"
                         id="data_nascimento"
                         name="data_nascimento"
-                        value={userData.data_nascimento}
+                        value={userData.data_nascimento || ''}
                         onChange={handleInputChange}
                         required
                       />
@@ -357,7 +515,7 @@ const ProfilePage = () => {
                 )}
 
                 <div className="profile-success">
-                  Perfil atualizado com sucesso!
+                  ✅ Perfil atualizado com sucesso!
                 </div>
               </div>
             )}
@@ -392,7 +550,7 @@ const ProfilePage = () => {
                       </div>
                     </label>
                     {file && (
-                      <p className="file-selected">Arquivo selecionado: {file.name}</p>
+                      <p className="file-selected">📎 Arquivo selecionado: {file.name}</p>
                     )}
                   </div>
 

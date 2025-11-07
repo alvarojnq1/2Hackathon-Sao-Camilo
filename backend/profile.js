@@ -57,25 +57,7 @@ async function enviarEmailSenha(email, nome, senha) {
 
 /* ========= Rotas ========= */
 
-/** Atualizar perfil (diagnóstico e painel genético) */
-router.put("/perfil", authenticateToken, async (req, res) => {
-  try {
-    const { diagnostico_previo, painel_genetico } = req.body;
-    const userId = req.user.id;
 
-    await pool.execute(
-      `UPDATE paciente 
-       SET diagnostico_previo = ?, painel_genetico = ? 
-       WHERE idPaciente = ?`,
-      [diagnostico_previo ?? 0, painel_genetico ?? null, userId]
-    );
-
-    res.json({ message: 'Perfil atualizado com sucesso' });
-  } catch (error) {
-    console.error('Erro ao atualizar perfil:', error);
-    res.status(500).json({ error: 'Erro interno do servidor' });
-  }
-});
 
 /** Criar família e adicionar o criador */
 router.post("/familia", authenticateToken, async (req, res) => {
@@ -298,7 +280,6 @@ router.delete("/familia/sair", authenticateToken, async (req, res) => {
 });
 
 /** Buscar perfil do usuário */
-/** Buscar perfil do usuário (data em YYYY-MM-DD) */
 router.get("/perfil", authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -308,7 +289,7 @@ router.get("/perfil", authenticateToken, async (req, res) => {
           idPaciente,
           nome,
           email,
-          DATE_FORMAT(data_nascimento, '%Y-%m-%d') AS data_nascimento, -- <- formata para o input date
+          DATE_FORMAT(data_nascimento, '%Y-%m-%d') AS data_nascimento,
           sexo,
           diagnostico_previo,
           painel_genetico
@@ -327,7 +308,7 @@ router.get("/perfil", authenticateToken, async (req, res) => {
       id: u.idPaciente,
       nome: u.nome,
       email: u.email,
-      data_nascimento: u.data_nascimento || '', // string YYYY-MM-DD ou ''
+      data_nascimento: u.data_nascimento || '',
       sexo: u.sexo || '',
       diagnostico_previo: Boolean(u.diagnostico_previo),
       painel_genetico: u.painel_genetico ?? null
@@ -339,19 +320,21 @@ router.get("/perfil", authenticateToken, async (req, res) => {
   }
 });
 
-/** Atualizar perfil (diagnóstico, painel_genetico, data_nascimento, sexo) */
+/** Atualizar perfil completo */
 router.put("/perfil", authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     let { diagnostico_previo, painel_genetico, data_nascimento, sexo } = req.body;
 
+    console.log('Dados recebidos para atualização:', req.body);
+
     // Normalizações
     diagnostico_previo = diagnostico_previo ? 1 : 0;
     painel_genetico = painel_genetico ?? null;
-    data_nascimento = data_nascimento || null; // esperar 'YYYY-MM-DD' do front
-    sexo = (sexo === 'M' || sexo === 'F') ? sexo : null; // sua CHECK aceita só M/F
+    data_nascimento = data_nascimento || null;
+    sexo = (sexo === 'M' || sexo === 'F' || sexo === 'O') ? sexo : null;
 
-    await pool.execute(
+    const [result] = await pool.execute(
       `UPDATE paciente 
          SET diagnostico_previo = ?, 
              painel_genetico = ?, 
@@ -361,13 +344,20 @@ router.put("/perfil", authenticateToken, async (req, res) => {
       [diagnostico_previo, painel_genetico, data_nascimento, sexo, userId]
     );
 
-    res.json({ message: 'Perfil atualizado com sucesso' });
+    console.log('Perfil atualizado com sucesso, linhas afetadas:', result.affectedRows);
+
+    res.json({ 
+      message: 'Perfil atualizado com sucesso',
+      updated: true 
+    });
 
   } catch (error) {
     console.error('Erro ao atualizar perfil:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
+
+
 
 
 export default router;
