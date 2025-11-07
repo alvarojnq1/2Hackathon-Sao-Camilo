@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { profileService, logout } from '../services/api';
-import logo from '../assets/logo.png';
-
+import Navbar from "../components/navbar";
 function Home() {
   const [user, setUser] = useState(null);
   const [familia, setFamilia] = useState(null);
@@ -98,33 +97,9 @@ function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <div className="flex items-center justify-center mr-3">
-                <img src={logo} alt="GenoWeb" className="w-8 h-8" />
-              </div>
-              <h1 className="text-xl font-bold text-gray-900">GenoWeb</h1>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              {user && (
-                <span className="text-gray-700">
-                  Olá, {user.nome}
-                </span>
-              )}
-              <button
-                onClick={logout}
-                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition"
-              >
-                Sair
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+           <Navbar />
+
+      
 
       {/* Conteúdo Principal */}
       <main className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">

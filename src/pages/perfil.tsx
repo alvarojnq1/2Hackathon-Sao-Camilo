@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { gsap } from 'gsap';
 import { useNavigate } from 'react-router-dom';
-import '../App.css';
+import '../ProfilePage.css';
 
 const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState('profile');
@@ -12,7 +12,6 @@ const ProfilePage = () => {
     data_nascimento: '',
     sexo: '',
     diagnostico_previo: false,
-    porcentagem: 0
   });
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -56,7 +55,6 @@ const ProfilePage = () => {
           data_nascimento: userProfile.data_nascimento || '',
           sexo: userProfile.sexo || '',
           diagnostico_previo: userProfile.diagnostico_previo || false,
-          porcentagem: userProfile.porcentagem || 0
         });
 
         // Animação de entrada
@@ -239,11 +237,7 @@ const ProfilePage = () => {
           <div className="profile-header">
             <h1>Meu Perfil</h1>
             <p>Gerencie suas informações pessoais e exames genéticos</p>
-            {userData.porcentagem > 0 && (
-              <div className="percentage-badge">
-                📊 Porcentagem de Risco Familiar: <strong>{userData.porcentagem}%</strong>
-              </div>
-            )}
+            
           </div>
 
           <div className="profile-tabs">

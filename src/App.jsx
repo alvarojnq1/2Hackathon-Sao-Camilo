@@ -4,6 +4,7 @@ import { authService } from "./services/api";
 import Login from "./pages/login";
 import Cadastro from "./pages/cadastro";
 import Home from "./pages/home";
+import Perfil from "./pages/perfil";
 import "./global.css";
 
 // Componente de rota protegida
@@ -61,6 +62,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Home />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/perfil" 
+          element={
+            <ProtectedRoute>
+              <Perfil />
             </ProtectedRoute>
           } 
         />

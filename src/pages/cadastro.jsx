@@ -59,8 +59,9 @@ export default function Cadastro() {
       mostrarAlerta('As senhas não coincidem!', false);
       return;
     }
+
     if (!validarSenha(senha)) {
-      mostrarAlerta('Senha: mínimo 8 caracteres, 1 maiúscula, 1 número e 1 símbolo.', false);
+      mostrarAlerta('A senha deve ter pelo menos 8 caracteres, 1 letra maiúscula, 1 número e 1 símbolo!', false);
       return;
     }
     if (tipo === 'paciente' && !validarDataNascimento(data_nascimento)) {
@@ -71,6 +72,7 @@ export default function Cadastro() {
     setCarregando(true);
     try {
       let resultado;
+      
       if (tipo === 'paciente') {
         resultado = await authService.cadastrarPaciente({
           nome,
@@ -98,15 +100,39 @@ export default function Cadastro() {
       } else {
         mostrarAlerta(resultado.error || 'Erro no cadastro', false);
       }
-    } catch (err) {
-      console.error('Erro no cadastro:', err);
+    } catch (error) {
+      console.error('Erro no cadastro:', error);
       mostrarAlerta('Erro de conexão. Tente novamente.', false);
     } finally {
       setCarregando(false);
     }
   };
 
-  // limites do date picker (paciente)
+  const handleChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const TipoUsuarioBotao = ({ tipo, label }) => {
+    const selecionado = formData.tipo === tipo;
+    return (
+      <button
+        type="button"
+        onClick={() => handleChange('tipo', tipo)}
+        className={`flex-1 py-3 rounded-full font-medium transition-all ${
+          selecionado 
+            ? "bg-[#9B7BFF] text-white shadow-lg" 
+            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+        }`}
+      >
+        {label}
+      </button>
+    );
+  };
+
+  // Calcular idade máxima e mínima para o date picker
   const hoje = new Date();
   const dataMinima = new Date(hoje.getFullYear() - 120, hoje.getMonth(), hoje.getDate());
   const dataMaxima = new Date(hoje.getFullYear() - 1, hoje.getMonth(), hoje.getDate());
@@ -129,13 +155,13 @@ export default function Cadastro() {
   };
 
   return (
-    <div className="min-h-screen grid grid-cols-1 md:grid-cols-2 bg-gradient-to-br from-blue-50 to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-6">
       {/* Alerta */}
       {alerta && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
           <div
             className={`px-6 py-3 rounded-lg shadow-lg ${
-              alerta.sucesso ? 'bg-green-500' : 'bg-red-500'
+              alerta.sucesso ? "bg-green-500" : "bg-red-500"
             } text-white font-medium flex items-center gap-2`}
           >
             {alerta.sucesso ? '✅' : '❌'} {alerta.mensagem}
@@ -143,13 +169,22 @@ export default function Cadastro() {
         </div>
       )}
 
-      {/* Lado Esquerdo - Branding (igual ao Login layout) */}
-      <div className="hidden md:grid place-items-center bg-[#00817d]">
-        <div className="flex flex-col items-center gap-6 px-6 text-white">
-          <img src={logo} alt="GenoWeb" className="w-32 h-32 mb-2" />
-          <h1 className="text-5xl font-bold font-ubuntu">GenoWeb</h1>
-        </div>
-      </div>
+      <div className="w-full max-w-md">
+        <div className="bg-white rounded-3xl shadow-2xl p-8">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="w-20 h-20 bg-[#9B7BFF] rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <span className="text-white text-2xl">🧬</span>
+            </div>
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">Criar Conta</h1>
+            <p className="text-gray-600">Junte-se à nossa plataforma</p>
+          </div>
+
+          {/* Seletor de Tipo */}
+          <div className="bg-gray-100 rounded-full p-1 flex gap-1 mb-6">
+            <TipoUsuarioBotao tipo="paciente" label="Paciente" />
+            <TipoUsuarioBotao tipo="profissional" label="Profissional" />
+          </div>
 
       {/* Lado Direito - Formulário */}
       <div className="flex items-center justify-center p-6">
@@ -198,117 +233,44 @@ export default function Cadastro() {
                 />
               </div>
 
-              {/* Data de Nascimento (apenas para pacientes) */}
-              {formData.tipo === 'paciente' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Data de Nascimento *
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.data_nascimento}
-                    onChange={(e) => handleChange('data_nascimento', e.target.value)}
-                    min={dataMinima.toISOString().split('T')[0]}
-                    max={dataMaxima.toISOString().split('T')[0]}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00817d] focus:border-transparent transition"
-                    required
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Obrigatório para pacientes
-                  </p>
-                </div>
-              )}
+            {/* Confirmar Senha */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Confirmar Senha *
+              </label>
+              <input
+                type={senhaVisivel ? "text" : "password"}
+                value={formData.confirmarSenha}
+                onChange={(e) => handleChange('confirmarSenha', e.target.value)}
+                placeholder="Repita sua senha"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B7BFF] focus:border-transparent transition"
+                required
+              />
+            </div>
 
-              {/* Sexo (apenas para pacientes) */}
-              {formData.tipo === 'paciente' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Sexo *
-                  </label>
-                  <select
-                    value={formData.sexo}
-                    onChange={(e) => handleChange('sexo', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00817d] focus:border-transparent transition"
-                    required
-                  >
-                    <option value="">Selecione</option>
-                    <option value="M">Masculino</option>
-                    <option value="F">Feminino</option>
-                  </select>
-                </div>
-              )}
+            {/* Botão de Cadastro */}
+            <button
+              type="submit"
+              disabled={carregando}
+              className="w-full bg-[#9B7BFF] text-white py-3 rounded-xl font-medium hover:bg-[#8B6BFF] disabled:opacity-50 disabled:cursor-not-allowed transition shadow-lg hover:shadow-xl mt-6"
+            >
+              {carregando ? "Cadastrando..." : "Criar Conta"}
+            </button>
 
-              {/* Senha */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Senha *
-                </label>
-                <div className="relative">
-                  <input
-                    type={senhaVisivel ? 'text' : 'password'}
-                    value={formData.senha}
-                    onChange={(e) => handleChange('senha', e.target.value)}
-                    placeholder="Crie uma senha forte"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00817d] focus:border-transparent transition pr-12"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setSenhaVisivel(!senhaVisivel)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
-                    aria-label={senhaVisivel ? 'Ocultar senha' : 'Mostrar senha'}
-                  >
-                    {senhaVisivel ? <EyeOff size={20} /> : <Eye size={20} />}
-                  </button>
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Mínimo 8 caracteres, 1 maiúscula, 1 número e 1 símbolo
-                </p>
-              </div>
-
-              {/* Confirmar Senha */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Confirmar Senha *
-                </label>
-                <input
-                  type={senhaVisivel ? 'text' : 'password'}
-                  value={formData.confirmarSenha}
-                  onChange={(e) => handleChange('confirmarSenha', e.target.value)}
-                  placeholder="Repita sua senha"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00817d] focus:border-transparent transition"
-                  required
-                />
-              </div>
-
-              {/* Botão de Cadastro */}
-              <button
-                type="submit"
-                disabled={carregando}
-                className="w-full bg-[#00817d] text-white py-3 rounded-xl font-medium hover:bg-[#00817d] hover:opacity-90 hover:cursor-pointer disabled:cursor-not-allowed transition shadow-lg hover:shadow-xl mt-4"
-              >
-                {carregando ? 'Cadastrando...' : 'Criar Conta'}
-              </button>
-
-              {/* Link para login */}
-              <div className="text-center">
-                <p className="text-gray-600">
-                  Já tem uma conta?{' '}
-                  <a href="/login" className="text-[#00817d] hover:underline font-medium">
-                    Fazer login
-                  </a>
-                </p>
-              </div>
-            </form>
-          </div>
+            {/* Link para login */}
+            <div className="text-center">
+              <p className="text-gray-600">
+                Já tem uma conta?{" "}
+                <a href="/login" className="text-[#9B7BFF] hover:underline font-medium">
+                  Fazer login
+                </a>
+              </p>
+            </div>
+          </form>
         </div>
       </div>
 
-      {/* Fonte Ubuntu e animação do alerta (opcional) */}
       <style jsx>{`
-        @import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&display=swap');
-        .font-ubuntu { font-family: 'Ubuntu', sans-serif; }
-
         @keyframes fade-in {
           from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
           to { opacity: 1; transform: translateX(-50%) translateY(0); }

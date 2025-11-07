@@ -64,8 +64,9 @@ export default function Login() {
       <button
         type="button"
         onClick={() => setTipoUsuario(tipo)}
-        className={`w-1/2 py-3 rounded-full font-ubuntu text-sm md:text-base transition-all ${selecionado
-            ? "bg-[#00817d] text-white shadow-lg"
+        className={`w-1/2 py-3 rounded-full font-ubuntu text-sm md:text-base transition-all ${
+          selecionado 
+            ? "bg-[#00817d] text-white shadow-lg" 
             : "bg-gray-100 text-gray-600 hover:bg-gray-200"
           }`}
       >
@@ -89,10 +90,10 @@ export default function Login() {
       )}
 
       {/* Lado Esquerdo - Branding */}
-      <div className="hidden md:grid place-items-center bg-[#00817d]">
-        <div className="flex flex-col items-center gap-6 px-6 text-white">
-          <img src={logo} alt="GenoWeb" className="w-32 h-32 mb-4" />
-          <h1 className="text-5xl font-bold font-ubuntu mb-0">GenoWeb</h1>
+      <div className="hidden md:flex flex-col items-center justify-center  text-white bg-[#00817d]">
+        <div className="text-center">
+          <img src={logo} alt="Logo GenoWeb" className="w-40 h-40 mb-4" />
+          <h1 className="text-5xl font-bold font-ubuntu mb-4">GenoWeb</h1>
         </div>
       </div>
 
@@ -159,6 +160,7 @@ export default function Login() {
               {/* Link de recuperação de senha */}
               <div className="text-right">
                 <a href="/recuperar-senha" className="text-sm text-[#00817d] hover:underline">
+                  Esqueceu sua senha?
                 </a>
               </div>
 
@@ -166,7 +168,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={carregando}
-                className="w-full bg-[#00817d] text-white py-3 rounded-xl font-medium hover:bg-[#00817d] hover:opacity-90 hover:cursor-pointer disabled:cursor-not-allowed transition shadow-lg hover:shadow-xl"
+                className="w-full bg-[#00817d] text-white py-3 rounded-xl font-medium hover:bg-[#8B6BFF] disabled:opacity-50 disabled:cursor-not-allowed transition shadow-lg hover:shadow-xl"
               >
                 {carregando ? "Entrando..." : "Entrar"}
               </button>

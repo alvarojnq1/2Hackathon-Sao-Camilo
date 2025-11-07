@@ -7,6 +7,7 @@ import crypto from "crypto";
 
 const router = express.Router();
 
+/* ========= E-mail (Gmail) ========= */
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -54,64 +55,13 @@ async function enviarEmailSenha(email, nome, senha) {
   }
 }
 
-/* ========= Util: Recalcular % da família =========
-   Regra atual: %família = 100 * (#carregadores / total membros)
-   carregador = diagnostico_previo=1 OR painel_genetico contém BRCA1/BRCA2.
-*/
-async function recalcFamiliaPorcentagem(familiaId, connectionOrPool = pool) {
-  // pega conexão (aceita pool ou transação já aberta)
-  const conn = connectionOrPool.getConnection ? await connectionOrPool.getConnection() : connectionOrPool;
-  const mustRelease = !!connectionOrPool.getConnection;
-
-  try {
-    // calcula percentual
-    const [rows] = await conn.execute(
-      `
-      SELECT 
-        COUNT(*) AS total,
-        SUM(
-          CASE 
-            WHEN (p.diagnostico_previo = 1)
-              OR (p.painel_genetico LIKE '%NM_007294.4(BRCA1)%')
-              OR (p.painel_genetico LIKE '%NM_000059.4(BRCA2)%')
-            THEN 1 ELSE 0
-          END
-        ) AS carregadores
-      FROM paciente p
-      WHERE p.idFamilia = ?
-      `,
-      [familiaId]
-    );
-
-    const total = rows[0]?.total ?? 0;
-    const carregadores = rows[0]?.carregadores ?? 0;
-
-    const perc = total === 0 ? 0.0 : Math.round((100 * carregadores / total) * 100) / 100;
-
-    // grava o mesmo valor em todos os membros da família
-    await conn.execute(
-      `UPDATE paciente SET porcentagem_familia = ? WHERE idFamilia = ?`,
-      [perc, familiaId]
-    );
-
-    return perc;
-  } finally {
-    if (mustRelease) conn.release();
-  }
-}
-
 /* ========= Rotas ========= */
 
-// Atualizar perfil (diagnóstico e painel genético) + recalcular %
+/** Atualizar perfil (diagnóstico e painel genético) */
 router.put("/perfil", authenticateToken, async (req, res) => {
   try {
     const { diagnostico_previo, painel_genetico } = req.body;
     const userId = req.user.id;
-
-    const [familiaData] = await pool.execute(
-      `SELECT idFamilia FROM paciente WHERE idPaciente = ?`,
-      [userId]
-    );
 
     await pool.execute(
       `UPDATE paciente 
@@ -120,20 +70,14 @@ router.put("/perfil", authenticateToken, async (req, res) => {
       [diagnostico_previo ?? 0, painel_genetico ?? null, userId]
     );
 
-    // se o usuário pertence a uma família, recalcula a % da família
-    if (familiaData[0]?.idFamilia) {
-      await recalcFamiliaPorcentagem(familiaData[0].idFamilia);
-    }
-
     res.json({ message: 'Perfil atualizado com sucesso' });
-
   } catch (error) {
     console.error('Erro ao atualizar perfil:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
 
-// Criar família (e automaticamente adiciona o criador) + recalcular %
+/** Criar família e adicionar o criador */
 router.post("/familia", authenticateToken, async (req, res) => {
   try {
     const { nome_familia } = req.body;
@@ -148,7 +92,7 @@ router.post("/familia", authenticateToken, async (req, res) => {
       [userId]
     );
 
-    if (userData[0].idFamilia) {
+    if (userData[0]?.idFamilia) {
       return res.status(400).json({ error: 'Você já pertence a uma família' });
     }
 
@@ -166,9 +110,6 @@ router.post("/familia", authenticateToken, async (req, res) => {
         'UPDATE paciente SET idFamilia = ? WHERE idPaciente = ?',
         [familiaId, userId]
       );
-
-      // recalcula já com o criador
-      await recalcFamiliaPorcentagem(familiaId, connection);
 
       await connection.commit();
 
@@ -193,7 +134,7 @@ router.post("/familia", authenticateToken, async (req, res) => {
   }
 });
 
-// Adicionar membro à família + recalcular %
+/** Adicionar membro à família (com e sem e-mail) */
 router.post("/familia/membros", authenticateToken, async (req, res) => {
   try {
     const { nome, data_nascimento, sexo, email } = req.body;
@@ -207,7 +148,7 @@ router.post("/familia/membros", authenticateToken, async (req, res) => {
       'SELECT idFamilia FROM paciente WHERE idPaciente = ?',
       [userId]
     );
-    const userFamiliaId = userData[0].idFamilia;
+    const userFamiliaId = userData[0]?.idFamilia;
 
     if (!userFamiliaId) {
       return res.status(400).json({ error: 'Você não pertence a nenhuma família' });
@@ -234,8 +175,8 @@ router.post("/familia/membros", authenticateToken, async (req, res) => {
             await connection.rollback();
             return res.status(400).json({ error: 'Este usuário já pertence a outra família' });
           }
-          pacienteId = existingPatient.idPaciente;
 
+          pacienteId = existingPatient.idPaciente;
           await connection.execute(
             'UPDATE paciente SET idFamilia = ? WHERE idPaciente = ?',
             [userFamiliaId, pacienteId]
@@ -267,9 +208,6 @@ router.post("/familia/membros", authenticateToken, async (req, res) => {
         pacienteId = pacienteResult.insertId;
       }
 
-      // Recalcula porcentagem da família dentro da mesma transação
-      await recalcFamiliaPorcentagem(userFamiliaId, connection);
-
       await connection.commit();
 
       res.status(201).json({
@@ -299,16 +237,16 @@ router.post("/familia/membros", authenticateToken, async (req, res) => {
   }
 });
 
-// Obter dados da família do usuário (inclui porcentagem_familia)
+/** Obter dados da família do usuário */
 router.get("/minha-familia", authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
 
     const [userData] = await pool.execute(
       `SELECT p.idFamilia, f.nome_familia, f.criador_idPaciente
-       FROM paciente p
-       LEFT JOIN familia f ON p.idFamilia = f.idFamilia
-       WHERE p.idPaciente = ?`,
+         FROM paciente p
+    LEFT JOIN familia f ON p.idFamilia = f.idFamilia
+        WHERE p.idPaciente = ?`,
       [userId]
     );
 
@@ -320,9 +258,9 @@ router.get("/minha-familia", authenticateToken, async (req, res) => {
 
     const [membros] = await pool.execute(
       `SELECT idPaciente, nome, data_nascimento, sexo, email, 
-              diagnostico_previo, painel_genetico, porcentagem_familia
-       FROM paciente 
-       WHERE idFamilia = ?`,
+              diagnostico_previo, painel_genetico
+         FROM paciente
+        WHERE idFamilia = ?`,
        [familiaId]
     );
 
@@ -341,27 +279,15 @@ router.get("/minha-familia", authenticateToken, async (req, res) => {
   }
 });
 
-// Sair da família (remove o usuário da família) + recalcular % da antiga família
+/** Sair da família */
 router.delete("/familia/sair", authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Descobre a família atual antes de sair
-    const [cur] = await pool.execute(
-      'SELECT idFamilia FROM paciente WHERE idPaciente = ?',
-      [userId]
-    );
-    const familiaId = cur[0]?.idFamilia ?? null;
-
     await pool.execute(
-      'UPDATE paciente SET idFamilia = NULL, porcentagem_familia = 0.00 WHERE idPaciente = ?',
+      'UPDATE paciente SET idFamilia = NULL WHERE idPaciente = ?',
       [userId]
     );
-
-    // Recalcula % da família que o usuário deixou
-    if (familiaId) {
-      await recalcFamiliaPorcentagem(familiaId);
-    }
 
     res.json({ message: 'Você saiu da família com sucesso' });
 
@@ -371,16 +297,21 @@ router.delete("/familia/sair", authenticateToken, async (req, res) => {
   }
 });
 
-// Adicione esta rota ao seu backend (familia.js)
-
-// Buscar perfil do usuário
+/** Buscar perfil do usuário */
+/** Buscar perfil do usuário (data em YYYY-MM-DD) */
 router.get("/perfil", authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
 
     const [userData] = await pool.execute(
-      `SELECT idPaciente, nome, email, data_nascimento, sexo, 
-              diagnostico_previo, painel_genetico, porcentagem
+      `SELECT 
+          idPaciente,
+          nome,
+          email,
+          DATE_FORMAT(data_nascimento, '%Y-%m-%d') AS data_nascimento, -- <- formata para o input date
+          sexo,
+          diagnostico_previo,
+          painel_genetico
        FROM paciente 
        WHERE idPaciente = ?`,
       [userId]
@@ -390,17 +321,16 @@ router.get("/perfil", authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Usuário não encontrado' });
     }
 
-    const user = userData[0];
-    
+    const u = userData[0];
+
     res.json({
-      id: user.idPaciente,
-      nome: user.nome,
-      email: user.email,
-      data_nascimento: user.data_nascimento,
-      sexo: user.sexo,
-      diagnostico_previo: Boolean(user.diagnostico_previo),
-      painel_genetico: user.painel_genetico,
-      porcentagem: parseFloat(user.porcentagem) || 0
+      id: u.idPaciente,
+      nome: u.nome,
+      email: u.email,
+      data_nascimento: u.data_nascimento || '', // string YYYY-MM-DD ou ''
+      sexo: u.sexo || '',
+      diagnostico_previo: Boolean(u.diagnostico_previo),
+      painel_genetico: u.painel_genetico ?? null
     });
 
   } catch (error) {
@@ -408,5 +338,36 @@ router.get("/perfil", authenticateToken, async (req, res) => {
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
+
+/** Atualizar perfil (diagnóstico, painel_genetico, data_nascimento, sexo) */
+router.put("/perfil", authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    let { diagnostico_previo, painel_genetico, data_nascimento, sexo } = req.body;
+
+    // Normalizações
+    diagnostico_previo = diagnostico_previo ? 1 : 0;
+    painel_genetico = painel_genetico ?? null;
+    data_nascimento = data_nascimento || null; // esperar 'YYYY-MM-DD' do front
+    sexo = (sexo === 'M' || sexo === 'F') ? sexo : null; // sua CHECK aceita só M/F
+
+    await pool.execute(
+      `UPDATE paciente 
+         SET diagnostico_previo = ?, 
+             painel_genetico = ?, 
+             data_nascimento = ?, 
+             sexo = ?
+       WHERE idPaciente = ?`,
+      [diagnostico_previo, painel_genetico, data_nascimento, sexo, userId]
+    );
+
+    res.json({ message: 'Perfil atualizado com sucesso' });
+
+  } catch (error) {
+    console.error('Erro ao atualizar perfil:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
 
 export default router;
