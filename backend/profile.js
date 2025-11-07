@@ -7,12 +7,11 @@ import crypto from "crypto";
 
 const router = express.Router();
 
-// Configuração do Nodemailer (Gmail)
-const transporter = nodemailer.createTransporter({
+const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.GMAIL_USER, // Seu email do Gmail
-    pass: process.env.GMAIL_APP_PASSWORD // Senha de app do Gmail
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_APP_PASSWORD
   }
 });
 
