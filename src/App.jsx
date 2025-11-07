@@ -9,7 +9,7 @@ function App() {
 
   return (
     <body>
-      <HomePage/>
+      <Login/>
 </body>
   )
 }
