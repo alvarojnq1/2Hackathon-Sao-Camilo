@@ -18,7 +18,7 @@ export default function Login() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    
+
     if (!email || !senha) {
       mostrarAlerta("Por favor, preencha todos os campos", false);
       return;
@@ -36,9 +36,9 @@ export default function Login() {
         // Salva token e dados do usuário
         localStorage.setItem('token', resultado.token);
         localStorage.setItem('user', JSON.stringify(resultado.user));
-        
+
         mostrarAlerta("Login realizado com sucesso!", true);
-        
+
         // Redireciona baseado no tipo de usuário
         setTimeout(() => {
           if (resultado.user.tipo === 'paciente') {
@@ -68,7 +68,7 @@ export default function Login() {
           selecionado 
             ? "bg-[#00817d] text-white shadow-lg" 
             : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-        }`}
+          }`}
       >
         {label}
       </button>
@@ -81,9 +81,8 @@ export default function Login() {
       {alerta && (
         <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 animate-fade-in">
           <div
-            className={`px-6 py-3 rounded-lg shadow-lg ${
-              alerta.sucesso ? "bg-green-500" : "bg-red-500"
-            } text-white font-ubuntu flex items-center gap-2`}
+            className={`px-6 py-3 rounded-lg shadow-lg ${alerta.sucesso ? "bg-green-500" : "bg-red-500"
+              } text-white font-ubuntu flex items-center gap-2`}
           >
             {alerta.sucesso ? "✅" : "❌"} {alerta.mensagem}
           </div>
@@ -97,6 +96,7 @@ export default function Login() {
           <h1 className="text-5xl font-bold font-ubuntu mb-4">GenoWeb</h1>
         </div>
       </div>
+
 
       {/* Lado Direito - Formulário */}
       <div className="flex items-center justify-center p-6">
@@ -177,7 +177,7 @@ export default function Login() {
               <div className="text-center">
                 <p className="text-gray-600">
                   Não tem uma conta?{" "}
-                  <a href="/cadastro" className="text-[#9B7BFF] hover:underline font-medium">
+                  <a href="/cadastro" className="text-[#00817d] hover:underline font-medium">
                     Cadastre-se
                   </a>
                 </p>

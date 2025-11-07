@@ -88,7 +88,7 @@ function Home() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-[#9B7BFF] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-16 h-16 border-4 border-[#00817d] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Carregando...</p>
         </div>
       </div>
@@ -123,7 +123,7 @@ function Home() {
               <div className="flex space-x-4">
                 <button
                   onClick={() => setMostrarFormMembro(true)}
-                  className="bg-[#9B7BFF] hover:bg-[#8B6BFF] text-white px-6 py-2 rounded-lg transition"
+                  className="bg-[#00817d] hover:bg-[#8B6BFF] text-white px-6 py-2 rounded-lg transition"
                 >
                   + Adicionar Membro
                 </button>
@@ -199,7 +199,7 @@ const FamilyCreation = ({ onFamilyCreate }) => {
             value={familyName}
             onChange={(e) => setFamilyName(e.target.value)}
             placeholder="Ex: Família Silva, Família Santos..."
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B7BFF] focus:border-transparent transition"
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00817d] focus:border-transparent transition"
             required
           />
           <p className="text-sm text-gray-500 mt-2">
@@ -209,7 +209,7 @@ const FamilyCreation = ({ onFamilyCreate }) => {
         
         <button 
           type="submit" 
-          className="w-full bg-[#9B7BFF] hover:bg-[#8B6BFF] text-white py-3 rounded-xl font-medium transition shadow-lg"
+          className="w-full bg-[#00817d] hover:bg-[#8B6BFF] text-white py-3 rounded-xl font-medium transition shadow-lg"
         >
           Criar Família
         </button>
@@ -261,7 +261,7 @@ const MemberForm = ({ onSave, onCancel, isEditing, member }) => {
             name="nome"
             value={formData.nome}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9B7BFF]"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00817d]"
             required
           />
         </div>
@@ -276,7 +276,7 @@ const MemberForm = ({ onSave, onCancel, isEditing, member }) => {
             value={formData.email}
             onChange={handleChange}
             placeholder="Opcional"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9B7BFF]"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00817d]"
           />
         </div>
 
@@ -290,7 +290,7 @@ const MemberForm = ({ onSave, onCancel, isEditing, member }) => {
               name="data_nascimento"
               value={formData.data_nascimento}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9B7BFF]"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00817d]"
               required
             />
           </div>
@@ -303,7 +303,7 @@ const MemberForm = ({ onSave, onCancel, isEditing, member }) => {
               name="sexo"
               value={formData.sexo}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9B7BFF]"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00817d]"
               required
             >
               <option value="">Selecione</option>
@@ -322,7 +322,7 @@ const MemberForm = ({ onSave, onCancel, isEditing, member }) => {
             name="diagnostico_previo"
             value={formData.diagnostico_previo}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9B7BFF]"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00817d]"
             required
           >
             <option value="">Selecione</option>
@@ -334,7 +334,7 @@ const MemberForm = ({ onSave, onCancel, isEditing, member }) => {
         <div className="flex space-x-4">
           <button
             type="submit"
-            className="bg-[#9B7BFF] hover:bg-[#8B6BFF] text-white px-6 py-2 rounded-lg transition"
+            className="bg-[#00817d] hover:bg-[#8B6BFF] text-white px-6 py-2 rounded-lg transition"
           >
             {isEditing ? 'Atualizar' : 'Adicionar'}
           </button>
