@@ -15,6 +15,52 @@ const transporter = nodemailer.createTransport({
   }
 });
 
+// Rota para profissional obter todas as famílias
+router.get("/profissional/familias", authenticateToken, async (req, res) => {
+  try {
+    console.log('🔍 Rota /profissional/familias acessada');
+    
+    // Verifica se o usuário é um profissional
+    if (req.user.tipo !== 'profissional') {
+      return res.status(403).json({ error: 'Acesso permitido apenas para profissionais' });
+    }
+
+    // Busca todas as famílias
+    const [familias] = await pool.execute(
+      `SELECT f.idFamilia, f.nome_familia, f.criador_idPaciente
+       FROM familia f`
+    );
+
+    // Para cada família, busca os membros
+    const familiasComMembros = await Promise.all(
+      familias.map(async (familia) => {
+        const [membros] = await pool.execute(
+          `SELECT idPaciente, nome, data_nascimento, sexo, email, 
+                  diagnostico_previo, painel_genetico
+           FROM paciente 
+           WHERE idFamilia = ?`,
+          [familia.idFamilia]
+        );
+
+        return {
+          id: familia.idFamilia,
+          nome_familia: familia.nome_familia,
+          criador_id: familia.criador_idPaciente,
+          membros: membros
+        };
+      })
+    );
+
+    res.json({
+      familias: familiasComMembros
+    });
+
+  } catch (error) {
+    console.error('❌ Erro ao buscar famílias:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
 // Função para gerar senha aleatória
 function gerarSenhaAleatoria(tamanho = 8) {
   return crypto.randomBytes(tamanho).toString('hex').slice(0, tamanho);
@@ -46,7 +92,7 @@ async function enviarEmailSenha(email, nome, senha) {
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log('✅ Email enviado para:', email, 'ID:', info.messageId);
+    console.log('✅ Email enviado para:', email);
     return true;
   } catch (error) {
     console.error('❌ Erro ao enviar email:', error);
@@ -143,11 +189,14 @@ router.post("/familia", authenticateToken, async (req, res) => {
   }
 });
 
-// Adicionar membro à família (com email opcional) - ATUALIZADA
+// Adicionar membro à família (CORRIGIDO - diagnóstico funcionando)
 router.post("/familia/membros", authenticateToken, async (req, res) => {
   try {
-    const { nome, data_nascimento, sexo, email } = req.body;
-    const userId = req.user.id;
+    const { nome, data_nascimento, sexo, email, diagnostico_previo } = req.body;
+
+    console.log('📥 Dados recebidos para adicionar membro:', {
+      nome, data_nascimento, sexo, email, diagnostico_previo
+    });
 
     if (!nome) {
       return res.status(400).json({ error: 'Nome é obrigatório' });
@@ -156,7 +205,7 @@ router.post("/familia/membros", authenticateToken, async (req, res) => {
     // Verifica se o usuário pertence a uma família
     const [userData] = await pool.execute(
       'SELECT idFamilia FROM paciente WHERE idPaciente = ?',
-      [userId]
+      [req.user.id]
     );
 
     const userFamiliaId = userData[0].idFamilia;
@@ -173,8 +222,13 @@ router.post("/familia/membros", authenticateToken, async (req, res) => {
       let pacienteId;
       let senhaGerada = null;
       let emailEnviado = false;
+      let pacienteExistente = false;
 
-      if (email) {
+      // CORREÇÃO: Converter 'sim'/'nao' para 1/0 de forma confiável
+      const diagnosticoValue = diagnostico_previo === 'sim' ? 1 : 0;
+      console.log(`🔧 Diagnóstico convertido: "${diagnostico_previo}" -> ${diagnosticoValue}`);
+
+      if (email && email.trim() !== '') {
         // Verifica se já existe um paciente com este email
         const [existingPatients] = await connection.execute(
           'SELECT idPaciente, idFamilia FROM paciente WHERE email = ?',
@@ -183,6 +237,7 @@ router.post("/familia/membros", authenticateToken, async (req, res) => {
 
         if (existingPatients.length > 0) {
           const existingPatient = existingPatients[0];
+          pacienteExistente = true;
           
           // Se já pertence a outra família, não pode adicionar
           if (existingPatient.idFamilia && existingPatient.idFamilia !== userFamiliaId) {
@@ -190,43 +245,46 @@ router.post("/familia/membros", authenticateToken, async (req, res) => {
             return res.status(400).json({ error: 'Este usuário já pertence a outra família' });
           }
           
-          // Se não pertence a família nenhuma ou já pertence à mesma família
           pacienteId = existingPatient.idPaciente;
           
-          // Atualiza para a família atual
+          // Atualiza para a família atual e diagnostico_previo
           await connection.execute(
-            'UPDATE paciente SET idFamilia = ? WHERE idPaciente = ?',
-            [userFamiliaId, pacienteId]
+            'UPDATE paciente SET idFamilia = ?, diagnostico_previo = ? WHERE idPaciente = ?',
+            [userFamiliaId, diagnosticoValue, pacienteId]
           );
+          
+          console.log(`✅ Paciente existente atualizado: ${nome}, diagnóstico: ${diagnosticoValue}`);
         } else {
           // Gera senha aleatória
           senhaGerada = gerarSenhaAleatoria();
           const hashedPassword = await bcrypt.hash(senhaGerada, 10);
           
-          // Cria novo paciente com email
+          // Cria novo paciente com email e diagnostico_previo
           const [pacienteResult] = await connection.execute(
-            `INSERT INTO paciente (nome, data_nascimento, sexo, email, senha, idFamilia) 
-             VALUES (?, ?, ?, ?, ?, ?)`,
-            [nome, data_nascimento, sexo, email, hashedPassword, userFamiliaId]
+            `INSERT INTO paciente (nome, data_nascimento, sexo, email, senha, diagnostico_previo, idFamilia) 
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [nome, data_nascimento, sexo, email, hashedPassword, diagnosticoValue, userFamiliaId]
           );
           pacienteId = pacienteResult.insertId;
+
+          console.log(`✅ Novo paciente criado: ${nome}, diagnóstico: ${diagnosticoValue}`);
 
           // Envia email com a senha
           if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
             emailEnviado = await enviarEmailSenha(email, nome, senhaGerada);
-          } else {
-            console.log('⚠️  Configuração de email não encontrada - pulando envio');
           }
         }
       } else {
-        // Cria paciente sem email (membro falecido, etc.)
-        const hashedPassword = await bcrypt.hash('', 10); // Senha vazia
+        // Cria paciente sem email com diagnostico_previo
+        const hashedPassword = await bcrypt.hash('', 10);
         const [pacienteResult] = await connection.execute(
-          `INSERT INTO paciente (nome, data_nascimento, sexo, email, senha, idFamilia) 
-           VALUES (?, ?, ?, NULL, ?, ?)`,
-          [nome, data_nascimento, sexo, hashedPassword, userFamiliaId]
+          `INSERT INTO paciente (nome, data_nascimento, sexo, email, senha, diagnostico_previo, idFamilia) 
+           VALUES (?, ?, ?, NULL, ?, ?, ?)`,
+          [nome, data_nascimento, sexo, hashedPassword, diagnosticoValue, userFamiliaId]
         );
         pacienteId = pacienteResult.insertId;
+        
+        console.log(`✅ Paciente sem email criado: ${nome}, diagnóstico: ${diagnosticoValue}`);
       }
 
       await connection.commit();
@@ -239,10 +297,11 @@ router.post("/familia/membros", authenticateToken, async (req, res) => {
           data_nascimento, 
           sexo, 
           email,
+          diagnostico_previo: diagnosticoValue,
           idFamilia: userFamiliaId
         },
         emailEnviado: emailEnviado,
-        senhaGerada: email && !existingPatients?.length ? senhaGerada : undefined
+        senhaGerada: email && !pacienteExistente ? senhaGerada : undefined
       });
 
     } catch (error) {

@@ -52,11 +52,13 @@ function Home() {
 
   const handleAdicionarMembro = async (dadosMembro) => {
     try {
-      // Converter diagnostico_previo para boolean
+      // Converter 'sim'/'nao' para 1/0 (TINYINT do MySQL) - CORRIGIDO
       const dadosFormatados = {
         ...dadosMembro,
-        diagnostico_previo: dadosMembro.diagnostico_previo === 'sim'
+        diagnostico_previo: dadosMembro.diagnostico_previo === 'sim' ? 1 : 0
       };
+
+      console.log('📤 Enviando dados do membro:', dadosFormatados);
 
       const resultado = await profileService.adicionarMembro(dadosFormatados);
       if (resultado.membro) {
@@ -242,18 +244,20 @@ const FamilyCreation = ({ onFamilyCreate }) => {
   );
 };
 
-// Componente MemberForm
+// Componente MemberForm (CORRIGIDO)
 const MemberForm = ({ onSave, onCancel, isEditing, member }) => {
   const [formData, setFormData] = useState({
     nome: member?.nome || '',
     email: member?.email || '',
     data_nascimento: member?.data_nascimento || '',
     sexo: member?.sexo || '',
-    diagnostico_previo: member?.diagnostico_previo ? 'sim' : 'nao'
+    diagnostico_previo: member?.diagnostico_previo !== undefined ? 
+      (member.diagnostico_previo === 1 ? 'sim' : 'nao') : 'nao'
   });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    console.log(`Campo alterado: ${name} = ${value}`);
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -262,6 +266,8 @@ const MemberForm = ({ onSave, onCancel, isEditing, member }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    console.log('📝 Dados do formulário antes do envio:', formData);
+    
     if (formData.nome && formData.data_nascimento && formData.sexo && formData.diagnostico_previo) {
       onSave(formData);
     } else {
@@ -377,6 +383,10 @@ const MemberForm = ({ onSave, onCancel, isEditing, member }) => {
 
 // Componente MembersList
 const MembersList = ({ members, onEditMember, onRemoveMember }) => {
+  const formatarDiagnostico = (diagnostico) => {
+    return diagnostico === 1 ? 'Sim' : 'Não';
+  };
+
   if (members.length === 0) {
     return (
       <div className="text-center py-12">
@@ -412,7 +422,7 @@ const MembersList = ({ members, onEditMember, onRemoveMember }) => {
                   <span>Nascimento: {new Date(member.data_nascimento).toLocaleDateString('pt-BR')}</span>
                   {member.diagnostico_previo && (
                     <span className="ml-2 bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs">
-                      Diagnóstico Prévio
+                      Diagnóstico Prévio: {formatarDiagnostico(member.diagnostico_previo)}
                     </span>
                   )}
                 </div>

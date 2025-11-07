@@ -124,6 +124,18 @@ export const isAuthenticated = () => {
   return !!getAuthToken();
 };
 
+// Serviço do profissional de saúde
+export const profissionalService = {
+  // Obter todas as famílias com seus membros
+  async obterTodasFamilias() {
+    const response = await fetch(`${API_BASE_URL}/api/profissional/familias`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    return await response.json();
+  },
+};
+
 // Utilitário para fazer logout
 export const logout = () => {
   localStorage.removeItem('token');
