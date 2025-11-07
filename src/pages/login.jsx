@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { authService } from "../services/api";
+import logo from '../assets/logo.png';
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -65,7 +66,7 @@ export default function Login() {
         onClick={() => setTipoUsuario(tipo)}
         className={`w-1/2 py-3 rounded-full font-ubuntu text-sm md:text-base transition-all ${
           selecionado 
-            ? "bg-[#9B7BFF] text-white shadow-lg" 
+            ? "bg-[#00817d] text-white shadow-lg" 
             : "bg-gray-100 text-gray-600 hover:bg-gray-200"
         }`}
       >
@@ -90,14 +91,10 @@ export default function Login() {
       )}
 
       {/* Lado Esquerdo - Branding */}
-      <div className="hidden md:flex flex-col items-center justify-center bg-gradient-to-br from-[#9B7BFF] to-[#7E5BFF] text-white p-8">
+      <div className="hidden md:flex flex-col items-center justify-center  text-white bg-[#00817d]">
         <div className="text-center">
-          <div className="w-32 h-32 bg-white rounded-2xl flex items-center justify-center mb-6 mx-auto shadow-2xl">
-            <span className="text-[#9B7BFF] text-4xl font-bold">🧬</span>
-          </div>
+          <img src={logo} alt="Logo GenoWeb" className="w-40 h-40 mb-4" />
           <h1 className="text-5xl font-bold font-ubuntu mb-4">GenoWeb</h1>
-          <p className="text-xl opacity-90">Sistema de Análise Genética Familiar</p>
-          <p className="mt-4 opacity-75">Gerencie históricos genéticos da sua família de forma segura e intuitiva</p>
         </div>
       </div>
 
@@ -131,7 +128,7 @@ export default function Login() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="seu@email.com"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B7BFF] focus:border-transparent transition"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00817d] focus:border-transparent transition"
                   required
                 />
               </div>
@@ -147,7 +144,7 @@ export default function Login() {
                     value={senha}
                     onChange={(e) => setSenha(e.target.value)}
                     placeholder="Sua senha"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B7BFF] focus:border-transparent transition pr-12"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00817d] focus:border-transparent transition pr-12"
                     required
                   />
                   <button
@@ -162,7 +159,7 @@ export default function Login() {
 
               {/* Link de recuperação de senha */}
               <div className="text-right">
-                <a href="/recuperar-senha" className="text-sm text-[#9B7BFF] hover:underline">
+                <a href="/recuperar-senha" className="text-sm text-[#00817d] hover:underline">
                   Esqueceu sua senha?
                 </a>
               </div>
@@ -171,7 +168,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={carregando}
-                className="w-full bg-[#9B7BFF] text-white py-3 rounded-xl font-medium hover:bg-[#8B6BFF] disabled:opacity-50 disabled:cursor-not-allowed transition shadow-lg hover:shadow-xl"
+                className="w-full bg-[#00817d] text-white py-3 rounded-xl font-medium hover:bg-[#8B6BFF] disabled:opacity-50 disabled:cursor-not-allowed transition shadow-lg hover:shadow-xl"
               >
                 {carregando ? "Entrando..." : "Entrar"}
               </button>
