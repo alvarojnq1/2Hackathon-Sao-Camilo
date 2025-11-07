@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { authService } from "../services/api";
+import logo from '../assets/logo.png';
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -17,7 +18,7 @@ export default function Login() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    
+
     if (!email || !senha) {
       mostrarAlerta("Por favor, preencha todos os campos", false);
       return;
@@ -35,9 +36,9 @@ export default function Login() {
         // Salva token e dados do usuário
         localStorage.setItem('token', resultado.token);
         localStorage.setItem('user', JSON.stringify(resultado.user));
-        
+
         mostrarAlerta("Login realizado com sucesso!", true);
-        
+
         // Redireciona baseado no tipo de usuário
         setTimeout(() => {
           if (resultado.user.tipo === 'paciente') {
@@ -63,11 +64,10 @@ export default function Login() {
       <button
         type="button"
         onClick={() => setTipoUsuario(tipo)}
-        className={`w-1/2 py-3 rounded-full font-ubuntu text-sm md:text-base transition-all ${
-          selecionado 
-            ? "bg-[#9B7BFF] text-white shadow-lg" 
+        className={`w-1/2 py-3 rounded-full font-ubuntu text-sm md:text-base transition-all ${selecionado
+            ? "bg-[#00817d] text-white shadow-lg"
             : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-        }`}
+          }`}
       >
         {label}
       </button>
@@ -80,9 +80,8 @@ export default function Login() {
       {alerta && (
         <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 animate-fade-in">
           <div
-            className={`px-6 py-3 rounded-lg shadow-lg ${
-              alerta.sucesso ? "bg-green-500" : "bg-red-500"
-            } text-white font-ubuntu flex items-center gap-2`}
+            className={`px-6 py-3 rounded-lg shadow-lg ${alerta.sucesso ? "bg-green-500" : "bg-red-500"
+              } text-white font-ubuntu flex items-center gap-2`}
           >
             {alerta.sucesso ? "✅" : "❌"} {alerta.mensagem}
           </div>
@@ -90,16 +89,13 @@ export default function Login() {
       )}
 
       {/* Lado Esquerdo - Branding */}
-      <div className="hidden md:flex flex-col items-center justify-center bg-gradient-to-br from-[#9B7BFF] to-[#7E5BFF] text-white p-8">
-        <div className="text-center">
-          <div className="w-32 h-32 bg-white rounded-2xl flex items-center justify-center mb-6 mx-auto shadow-2xl">
-            <span className="text-[#9B7BFF] text-4xl font-bold">🧬</span>
-          </div>
-          <h1 className="text-5xl font-bold font-ubuntu mb-4">GenoWeb</h1>
-          <p className="text-xl opacity-90">Sistema de Análise Genética Familiar</p>
-          <p className="mt-4 opacity-75">Gerencie históricos genéticos da sua família de forma segura e intuitiva</p>
+      <div className="hidden md:grid place-items-center bg-[#00817d]">
+        <div className="flex flex-col items-center gap-6 px-6 text-white">
+          <img src={logo} alt="GenoWeb" className="w-32 h-32 mb-4" />
+          <h1 className="text-5xl font-bold font-ubuntu mb-0">GenoWeb</h1>
         </div>
       </div>
+
 
       {/* Lado Direito - Formulário */}
       <div className="flex items-center justify-center p-6">
@@ -131,7 +127,7 @@ export default function Login() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="seu@email.com"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B7BFF] focus:border-transparent transition"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00817d] focus:border-transparent transition"
                   required
                 />
               </div>
@@ -147,7 +143,7 @@ export default function Login() {
                     value={senha}
                     onChange={(e) => setSenha(e.target.value)}
                     placeholder="Sua senha"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B7BFF] focus:border-transparent transition pr-12"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00817d] focus:border-transparent transition pr-12"
                     required
                   />
                   <button
@@ -162,8 +158,7 @@ export default function Login() {
 
               {/* Link de recuperação de senha */}
               <div className="text-right">
-                <a href="/recuperar-senha" className="text-sm text-[#9B7BFF] hover:underline">
-                  Esqueceu sua senha?
+                <a href="/recuperar-senha" className="text-sm text-[#00817d] hover:underline">
                 </a>
               </div>
 
@@ -171,7 +166,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={carregando}
-                className="w-full bg-[#9B7BFF] text-white py-3 rounded-xl font-medium hover:bg-[#8B6BFF] disabled:opacity-50 disabled:cursor-not-allowed transition shadow-lg hover:shadow-xl"
+                className="w-full bg-[#00817d] text-white py-3 rounded-xl font-medium hover:bg-[#00817d] hover:opacity-90 hover:cursor-pointer disabled:cursor-not-allowed transition shadow-lg hover:shadow-xl"
               >
                 {carregando ? "Entrando..." : "Entrar"}
               </button>
@@ -180,7 +175,7 @@ export default function Login() {
               <div className="text-center">
                 <p className="text-gray-600">
                   Não tem uma conta?{" "}
-                  <a href="/cadastro" className="text-[#9B7BFF] hover:underline font-medium">
+                  <a href="/cadastro" className="text-[#00817d] hover:underline font-medium">
                     Cadastre-se
                   </a>
                 </p>
