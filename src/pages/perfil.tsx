@@ -1,10 +1,9 @@
-// pages/ProfilePage.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import { useNavigate } from 'react-router-dom';
-import '../ProfilePage.css';
+import { User, Upload, Save, AlertCircle, CheckCircle, Activity, X } from 'lucide-react';
 
-const ProfilePage = () => {
+const Perfil = ({ isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState('profile');
   const [userData, setUserData] = useState({
     nome: '',
@@ -24,141 +23,116 @@ const ProfilePage = () => {
   const API_BASE = "http://localhost:3000/api"; 
   const PYTHON_API_BASE = "http://localhost:8000";
 
-  // Refs para animações GSAP
-  const profileContainerRef = useRef(null);
-  const headerRef = useRef(null);
-  const tabsRef = useRef(null);
+  const overlayRef = useRef(null);
+  const modalRef = useRef(null);
   const formRef = useRef(null);
-  const successRef = useRef(null);
 
   useEffect(() => {
-    const loadUserProfile = async () => {
-      setProfileLoading(true);
-      setError(null);
-      
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          navigate('/login');
-          return;
-        }
+    if (isOpen) {
+      loadUserProfile();
+      animateEntrance();
+    }
+  }, [isOpen]);
 
-        console.log('Buscando perfil do usuário...');
-        
-        const response = await fetch(`${API_BASE}/perfil`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        console.log('Resposta do servidor:', response.status);
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Erro na resposta:', errorText);
-          throw new Error(`Erro ${response.status}: ${response.statusText}`);
-        }
-
-        const userProfile = await response.json();
-        console.log('Perfil carregado:', userProfile);
-        
-        // Atualiza os dados do usuário
-        setUserData({
-          nome: userProfile.nome || '',
-          email: userProfile.email || '',
-          data_nascimento: userProfile.data_nascimento || '',
-          sexo: userProfile.sexo || '',
-          diagnostico_previo: userProfile.diagnostico_previo || false,
-        });
-
-        // Animação de entrada após carregar dados
-        animatePageEntrance();
-
-      } catch (error) {
-        console.error('Erro ao carregar perfil:', error);
-        setError(`Erro ao carregar dados do perfil: ${error.message}`);
-        animateError();
-      } finally {
-        setProfileLoading(false);
-      }
-    };
-
-    loadUserProfile();
-  }, [navigate]);
-
-  // Animação de entrada da página
-  const animatePageEntrance = () => {
-    const tl = gsap.timeline();
+  const loadUserProfile = async () => {
+    setProfileLoading(true);
+    setError(null);
     
-    tl.fromTo(headerRef.current,
-      { y: -50, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.8, ease: "power3.out" }
-    )
-    .fromTo(tabsRef.current,
-      { y: 30, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.6, ease: "back.out(1.7)" },
-      "-=0.4"
-    )
-    .fromTo(formRef.current,
-      { y: 50, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.8, ease: "power3.out" },
-      "-=0.3"
-    );
-  };
-
-  // Animação de erro
-  const animateError = () => {
-    gsap.fromTo('.error-message',
-      { scale: 0, opacity: 0 },
-      { 
-        scale: 1, 
-        opacity: 1, 
-        duration: 0.5, 
-        ease: "back.out(1.7)",
-        y: 0
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        navigate('/login');
+        return;
       }
-    );
+
+      const response = await fetch(`${API_BASE}/perfil`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) throw new Error(`Erro ao carregar perfil`);
+
+      const userProfile = await response.json();
+      
+      setUserData({
+        nome: userProfile.nome || '',
+        email: userProfile.email || '',
+        data_nascimento: userProfile.data_nascimento || '',
+        sexo: userProfile.sexo || '',
+        diagnostico_previo: userProfile.diagnostico_previo || false,
+      });
+
+    } catch (error) {
+      console.error(error);
+      setError(error.message);
+    } finally {
+      setProfileLoading(false);
+    }
   };
 
-  // Animação de troca de tabs
+  const animateEntrance = () => {
+    const tl = gsap.timeline();
+    if (overlayRef.current) {
+        tl.fromTo(overlayRef.current, 
+        { opacity: 0 }, 
+        { opacity: 1, duration: 0.3 }
+        );
+    }
+    if (modalRef.current) {
+        tl.fromTo(modalRef.current,
+        { scale: 0.8, opacity: 0, y: 20 },
+        { scale: 1, opacity: 1, y: 0, duration: 0.5, ease: "back.out(1.2)" }, 
+        "-=0.2"
+        );
+    }
+  };
+
   const animateTabChange = (newTab) => {
     const tl = gsap.timeline();
-    
-    tl.to('.tab-content > *', {
-      opacity: 0,
-      y: 20,
-      duration: 0.3,
-      ease: "power2.in",
-      onComplete: () => {
-        setActiveTab(newTab);
-      }
+    tl.to('.tab-content', {
+      opacity: 0, y: 10, duration: 0.2, ease: "power2.in",
+      onComplete: () => setActiveTab(newTab)
     })
-    .to('.tab-content > *', {
-      opacity: 1,
-      y: 0,
-      duration: 0.4,
-      ease: "power2.out"
-    }, "+=0.1");
+    .to('.tab-content', {
+      opacity: 1, y: 0, duration: 0.3, ease: "power2.out"
+    });
+  };
+
+  const animateSuccess = () => {
+    const successElement = document.querySelector('.profile-success');
+    if (successElement) {
+        gsap.fromTo(successElement,
+        { scale: 0.8, opacity: 0, y: -10 },
+        { scale: 1, opacity: 1, y: 0, duration: 0.4, ease: "back.out(1.7)",
+            onComplete: () => {
+            setTimeout(() => {
+                gsap.to(successElement, { opacity: 0, duration: 0.3 });
+            }, 3000);
+            }
+        }
+        );
+    }
+  };
+
+  const animateResults = () => {
+    gsap.fromTo('.result-section', 
+      { height: 0, opacity: 0 }, 
+      { height: 'auto', opacity: 1, duration: 0.6, ease: "power3.out" }
+    );
   };
 
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
     setSaving(true);
     setError(null);
-    
     try {
       const token = localStorage.getItem('token');
-      
-      console.log('Enviando atualização:', userData);
-      
       const response = await fetch(`${API_BASE}/perfil`, {
         method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           data_nascimento: userData.data_nascimento,
           sexo: userData.sexo,
@@ -166,79 +140,19 @@ const ProfilePage = () => {
           painel_genetico: result?.painel_genetico?.total_percent || null
         })
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `Erro ${response.status} ao atualizar perfil`);
-      }
-
-      const resultData = await response.json();
-      console.log('Perfil atualizado com sucesso:', resultData);
-      
-      // Animação de sucesso
+      if (!response.ok) throw new Error('Erro ao atualizar');
       animateSuccess();
-      
     } catch (error) {
-      console.error('Erro ao atualizar perfil:', error);
       setError(error.message);
-      animateError();
     } finally {
       setSaving(false);
     }
-  };
-
-  // Animação de sucesso
-  const animateSuccess = () => {
-    const successElement = document.querySelector('.profile-success');
-    
-    gsap.fromTo(successElement,
-      { 
-        scale: 0, 
-        opacity: 0,
-        y: -50 
-      },
-      { 
-        scale: 1, 
-        opacity: 1,
-        y: 0,
-        duration: 0.6, 
-        ease: "back.out(1.7)",
-        onComplete: () => {
-          // Adiciona pulso contínuo
-          gsap.to(successElement, {
-            scale: 1.05,
-            duration: 0.5,
-            repeat: -1,
-            yoyo: true,
-            ease: "power1.inOut"
-          });
-          
-          setTimeout(() => {
-            gsap.to(successElement, {
-              scale: 0,
-              opacity: 0,
-              duration: 0.4,
-              ease: "power2.in",
-              onComplete: () => {
-                gsap.killTweensOf(successElement);
-              }
-            });
-          }, 3000);
-        }
-      }
-    );
   };
 
   const onFileChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
       setFile(e.target.files[0]);
       setError(null);
-      
-      // Animação do arquivo selecionado
-      gsap.fromTo('.file-selected',
-        { scale: 0, opacity: 0 },
-        { scale: 1, opacity: 1, duration: 0.4, ease: "back.out(1.7)" }
-      );
     }
   };
 
@@ -246,95 +160,28 @@ const ProfilePage = () => {
     e.preventDefault();
     setError(null);
     setResult(null);
-
-    if (!file) {
-      setError("Selecione um PDF primeiro.");
-      animateError();
-      return;
-    }
+    if (!file) return;
 
     try {
       setLoading(true);
-      
-      // Animação de loading
-      gsap.to('.btn-primary', {
-        scale: 0.95,
-        duration: 0.2,
-        ease: "power2.inOut"
-      });
-
       const formData = new FormData();
       formData.append("arquivo", file);
-
-      const membrosFamilia = JSON.stringify([
-        { 
-          relacao: "paciente", 
-          possui_gene: userData.diagnostico_previo 
-        }
-      ]);
+      const membrosFamilia = JSON.stringify([{ relacao: "paciente", possui_gene: userData.diagnostico_previo }]);
       formData.append("membros_familia", membrosFamilia);
 
-      const resp = await fetch(`${PYTHON_API_BASE}/analisar-exame`, {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!resp.ok) {
-        const text = await resp.text();
-        throw new Error(text || `Falha HTTP ${resp.status}`);
-      }
+      const resp = await fetch(`${PYTHON_API_BASE}/analisar-exame`, { method: "POST", body: formData });
+      if (!resp.ok) throw new Error("Erro na análise");
       
       const json = await resp.json();
       setResult(json);
-      
-      // Atualiza automaticamente o perfil com o resultado do painel genético
       await updateProfileWithGeneticPanel(json.painel_genetico?.total_percent);
-      
-      // Animação de resultado
-      animateResults();
-      
+      setTimeout(() => animateResults(), 100);
+
     } catch (err) {
-      setError(err?.message || "Erro desconhecido ao enviar.");
-      animateError();
+      setError("Erro ao analisar o arquivo.");
     } finally {
       setLoading(false);
-      gsap.to('.btn-primary', {
-        scale: 1,
-        duration: 0.3,
-        ease: "back.out(1.7)"
-      });
     }
-  };
-
-  // Animação dos resultados
-  const animateResults = () => {
-    const tl = gsap.timeline();
-    
-    tl.fromTo('.result-section',
-      { y: 50, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.8, ease: "power3.out" }
-    )
-    .fromTo('.result-card',
-      { 
-        scale: 0.8, 
-        opacity: 0,
-        rotationY: -15 
-      },
-      { 
-        scale: 1, 
-        opacity: 1,
-        rotationY: 0,
-        duration: 0.6,
-        stagger: 0.2,
-        ease: "back.out(1.7)"
-      },
-      "-=0.4"
-    )
-    .fromTo('.message-card',
-      { y: 30, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.5, ease: "power2.out" },
-      "-=0.3"
-    );
   };
 
   const updateProfileWithGeneticPanel = async (painelPercent) => {
@@ -342,338 +189,186 @@ const ProfilePage = () => {
       const token = localStorage.getItem('token');
       await fetch(`${API_BASE}/perfil`, {
         method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          diagnostico_previo: userData.diagnostico_previo,
-          painel_genetico: painelPercent
-        })
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ diagnostico_previo: userData.diagnostico_previo, painel_genetico: painelPercent })
       });
-    } catch (error) {
-      console.error('Erro ao atualizar painel genético:', error);
-    }
+    } catch (error) { console.error(error); }
   };
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setUserData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-
-    // Animação sutil no input alterado
-    if (type !== 'checkbox') {
-      gsap.fromTo(e.target, 
-        { scale: 1 },
-        { scale: 1.02, duration: 0.1, yoyo: true, repeat: 1 }
-      );
-    }
+    setUserData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
-  const handleTabClick = (tab) => {
-    animateTabChange(tab);
-  };
-
-  if (profileLoading) {
-    return (
-      <div className="App">
-        <div className="container">
-          <div className="loading-container">
-            <div className="loading-spinner-large"></div>
-            <p>Carregando perfil...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (!isOpen) return null;
 
   return (
-    <div className="App">
-      <div className="container">
-        <div className="profile-container" ref={profileContainerRef}>
-          <div className="profile-header" ref={headerRef}>
-            <h1>Meu Perfil</h1>
-            <p>Gerencie suas informações pessoais e exames genéticos</p>
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 font-ubuntu">
+      {/* Background Escuro com Blur */}
+      <div 
+        ref={overlayRef}
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+        onClick={onClose} 
+      ></div>
+
+      {/* Card do Modal */}
+      <div 
+        ref={modalRef}
+        className="relative bg-white w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl flex flex-col"
+      >
+        {/* Header do Modal */}
+        <div className="sticky top-0 bg-white z-10 px-8 py-5 border-b border-gray-100 flex justify-between items-center rounded-t-3xl">
+          <div>
+            <h2 className="text-2xl font-bold text-[#00817d]">Meu Perfil</h2>
+            <p className="text-gray-500 text-sm">Gerencie seus dados e exames</p>
           </div>
+          <button 
+            onClick={onClose}
+            className="p-2 rounded-full hover:bg-gray-100 text-gray-400 hover:text-red-500 transition"
+          >
+            <X size={24} />
+          </button>
+        </div>
 
-          <div className="profile-tabs" ref={tabsRef}>
-            <button 
-              className={`tab-button ${activeTab === 'profile' ? 'active' : ''}`}
-              onClick={() => handleTabClick('profile')}
-            >
-              👤 Informações Pessoais
-            </button>
-            <button 
-              className={`tab-button ${activeTab === 'exams' ? 'active' : ''}`}
-              onClick={() => handleTabClick('exams')}
-            >
-              🧬 Upload de Exames
-            </button>
+        {/* Loading State Inicial */}
+        {profileLoading ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="w-10 h-10 border-4 border-[#00817d] border-t-transparent rounded-full animate-spin mb-4"></div>
+            <p className="text-gray-500">Carregando informações...</p>
           </div>
+        ) : (
+          <div className="p-0">
+            {/* Tabs */}
+            <div className="px-8 pt-6">
+              <div className="flex p-1 bg-gray-100 rounded-xl mb-6">
+                <button
+                  onClick={() => animateTabChange('profile')}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                    activeTab === 'profile' 
+                      ? 'bg-white text-[#00817d] shadow-sm' 
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <User size={18} /> Info Pessoais
+                </button>
+                <button
+                  onClick={() => animateTabChange('exams')}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                    activeTab === 'exams' 
+                      ? 'bg-white text-[#00817d] shadow-sm' 
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <Activity size={18} /> Painel Genético
+                </button>
+              </div>
+            </div>
 
-          <div className="tab-content" ref={formRef}>
-            {activeTab === 'profile' && (
-              <div className="profile-form-section">
-                <form onSubmit={handleProfileUpdate} className="profile-form">
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label htmlFor="nome">Nome Completo *</label>
-                      <input
-                        type="text"
-                        id="nome"
-                        name="nome"
-                        value={userData.nome}
-                        onChange={handleInputChange}
-                        required
-                        disabled
-                      />
-                      <small>Nome não pode ser alterado</small>
-                    </div>
-                    
-                    <div className="form-group">
-                      <label htmlFor="email">Email</label>
-                      <input
-                        type="email"
-                        id="email"
-                        name="email"
-                        value={userData.email}
-                        onChange={handleInputChange}
-                        placeholder="seu@email.com"
-                        disabled
-                      />
-                      <small>Email não pode ser alterado</small>
-                    </div>
-                  </div>
+            {/* Conteúdo das Tabs */}
+            <div className="px-8 pb-8 tab-content" ref={formRef}>
 
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label htmlFor="data_nascimento">Data de Nascimento *</label>
-                      <input
-                        type="date"
-                        id="data_nascimento"
-                        name="data_nascimento"
-                        value={userData.data_nascimento || ''}
-                        onChange={handleInputChange}
-                        required
-                      />
+              {activeTab === 'profile' && (
+                <form onSubmit={handleProfileUpdate} className="space-y-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 block mb-1">Nome Completo</label>
+                      <input type="text" value={userData.nome} disabled className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-500" />
                     </div>
-                    
-                    <div className="form-group">
-                      <label htmlFor="sexo">Sexo *</label>
-                      <select
-                        id="sexo"
-                        name="sexo"
-                        value={userData.sexo}
-                        onChange={handleInputChange}
-                        required
-                      >
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 block mb-1">Email</label>
+                      <input type="email" value={userData.email} disabled className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-500" />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 block mb-1">Data de Nascimento</label>
+                      <input type="date" name="data_nascimento" value={userData.data_nascimento || ''} onChange={handleInputChange} required className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00817d] outline-none" />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 block mb-1">Sexo Biológico</label>
+                      <select name="sexo" value={userData.sexo} onChange={handleInputChange} required className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#00817d] outline-none">
                         <option value="">Selecione</option>
                         <option value="M">Masculino</option>
                         <option value="F">Feminino</option>
-                        <option value="O">Outro</option>
                       </select>
                     </div>
                   </div>
 
-                  <div className="form-group checkbox-group">
-                    <label className="checkbox-label">
-                      <input
-                        type="checkbox"
-                        name="diagnostico_previo"
-                        checked={userData.diagnostico_previo}
-                        onChange={handleInputChange}
-                      />
-                      <span className="checkmark"></span>
-                      Possui diagnóstico prévio de condição genética
-                    </label>
+                  <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex gap-3">
+                    <input type="checkbox" name="diagnostico_previo" checked={userData.diagnostico_previo} onChange={handleInputChange} className="mt-1 w-5 h-5 accent-[#00817d]" />
+                    <span className="text-sm text-gray-700"><strong>Diagnóstico Prévio:</strong> Possuo histórico pessoal confirmado de condição genética.</span>
                   </div>
 
-                  <div className="form-actions">
-                    <button 
-                      type="submit" 
-                      className="btn-primary"
-                      disabled={saving}
-                    >
-                      {saving ? (
-                        <>
-                          <span className="loading-spinner"></span>
-                          Salvando...
-                        </>
-                      ) : (
-                        '💾 Atualizar Perfil'
-                      )}
-                    </button>
+                  {error && <div className="text-red-500 bg-red-50 p-3 rounded-lg text-sm flex items-center gap-2"><AlertCircle size={16}/> {error}</div>}
+                  
+                  <div className="profile-success hidden opacity-0 text-green-600 bg-green-50 p-3 rounded-lg text-sm flex items-center gap-2" style={{display: 'flex'}}>
+                    <CheckCircle size={16}/> Dados atualizados!
                   </div>
+
+                  <button type="submit" disabled={saving} className="w-full bg-[#00817d] text-white py-3 rounded-xl font-medium hover:bg-[#006e6a] transition shadow-md disabled:opacity-70 flex justify-center gap-2">
+                    {saving ? 'Salvando...' : <><Save size={18} /> Salvar Alterações</>}
+                  </button>
                 </form>
+              )}
 
-                {error && (
-                  <div className="error-message">
-                    ⚠️ {error}
-                  </div>
-                )}
-
-                <div className="profile-success">
-                  ✅ Perfil atualizado com sucesso!
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'exams' && (
-              <div className="upload-section">
-                <div className="upload-info">
-                  <h3>Upload do Exame Genético BRCA</h3>
-                  <p>
-                    Envie o PDF do seu laudo genético para análise automática. 
-                    O sistema irá analisar a presença dos genes BRCA1 e BRCA2.
-                  </p>
-                  <div className="privacy-notice">
-                    <strong>⚠️ Importante:</strong> Por questões de LGPD, você só pode enviar 
-                    seus próprios exames. O diagnóstico prévio informado no seu perfil será 
-                    utilizado para o cálculo do painel genético.
-                  </div>
-                </div>
-
-                <form onSubmit={onSubmitExame} className="upload-form">
-                  <div className="form-group">
-                    <label className="file-label">
-                      <span>Arquivo PDF do Exame *</span>
-                      <input
-                        type="file"
-                        accept="application/pdf"
-                        onChange={onFileChange}
-                        className="file-input"
-                      />
-                      <div className="file-custom">
-                        {file ? file.name : 'Selecionar arquivo PDF'}
-                      </div>
-                    </label>
-                    {file && (
-                      <p className="file-selected">📎 Arquivo selecionado: {file.name}</p>
-                    )}
+              {activeTab === 'exams' && (
+                <div className="space-y-6">
+                  <div className="bg-[#00817d]/5 border border-[#00817d]/20 rounded-xl p-4 text-center">
+                      <p className="text-[#00817d] text-sm font-medium">Envie seu laudo PDF para detecção de BRCA1/BRCA2 via IA.</p>
                   </div>
 
-                  <div className="analysis-info">
-                    <h4>Informações que serão utilizadas na análise:</h4>
-                    <div className="info-grid">
-                      <div className="info-item">
-                        <span className="info-label">Diagnóstico prévio:</span>
-                        <span className={`info-value ${userData.diagnostico_previo ? 'positive' : 'negative'}`}>
-                          {userData.diagnostico_previo ? 'Sim' : 'Não'}
-                        </span>
-                      </div>
-                      <div className="info-item">
-                        <span className="info-label">Status do gene:</span>
-                        <span className="info-value">
-                          Será detectado automaticamente no exame
-                        </span>
-                      </div>
+                  <form onSubmit={onSubmitExame} className="space-y-4">
+                    <div className={`border-2 border-dashed rounded-xl p-6 text-center transition cursor-pointer ${file ? 'border-[#00817d] bg-[#00817d]/5' : 'border-gray-300 hover:bg-gray-50'}`}>
+                      <input type="file" accept="application/pdf" onChange={onFileChange} className="hidden" id="file-upload" />
+                      <label htmlFor="file-upload" className="cursor-pointer block w-full h-full">
+                          <Upload className={`mx-auto mb-2 ${file ? 'text-[#00817d]' : 'text-gray-400'}`} size={32} />
+                          <span className="text-gray-600 font-medium">{file ? file.name : "Clique para selecionar PDF"}</span>
+                      </label>
                     </div>
-                    <p className="info-note">
-                      Para alterar o diagnóstico prévio, atualize suas informações na aba "Informações Pessoais".
-                    </p>
-                  </div>
 
-                  <div className="form-actions">
-                    <button
-                      type="submit"
-                      disabled={loading || !file}
-                      className="btn-primary"
-                    >
-                      {loading ? (
-                        <>
-                          <span className="loading-spinner"></span>
-                          Analisando PDF...
-                        </>
-                      ) : (
-                        '📊 Analisar Exame'
-                      )}
+                    <button type="submit" disabled={loading || !file} className="w-full bg-[#00817d] text-white py-3 rounded-xl font-medium hover:bg-[#006e6a] transition shadow-md disabled:opacity-50 flex justify-center gap-2">
+                      {loading ? "Analisando..." : <><Activity size={18} /> Analisar Exame</>}
                     </button>
-                  </div>
+                  </form>
 
-                  {error && (
-                    <div className="error-message">
-                      ⚠️ {error}
+                  {result && (
+                    <div className="result-section overflow-hidden">
+                      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-4">
+                        <div className="flex justify-between items-center border-b pb-2">
+                          <span className="font-bold text-gray-700">Risco Genético</span>
+                          <span className="text-2xl font-bold text-[#00817d]">{result.painel_genetico?.total_percent}%</span>
+                        </div>
+                        <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span>BRCA1:</span> 
+                              <span className={result.referencias_encontradas?.BRCA1 ? "text-red-500 font-bold" : "text-green-500 font-bold"}>
+                                {result.referencias_encontradas?.BRCA1 ? "DETECTADO" : "Não Detectado"}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>BRCA2:</span> 
+                              <span className={result.referencias_encontradas?.BRCA2 ? "text-red-500 font-bold" : "text-green-500 font-bold"}>
+                                {result.referencias_encontradas?.BRCA2 ? "DETECTADO" : "Não Detectado"}
+                              </span>
+                            </div>
+                        </div>
+                        <div className="bg-gray-50 p-3 rounded-lg text-xs text-gray-600 leading-relaxed">
+                          {result.mensagem_informativa}
+                        </div>
+                      </div>
                     </div>
                   )}
-                </form>
-
-                {result && (
-                  <div className="result-section">
-                    <h3>📋 Resultado da Análise</h3>
-
-                    <div className="result-grid">
-                      <div className="result-card">
-                        <h4>Resumo da Análise</h4>
-                        <div className="result-info">
-                          <div className="info-item">
-                            <span className="label">Paciente tem genes:</span>
-                            <span className={`value ${result.paciente_tem_genes ? 'positive' : 'negative'}`}>
-                              {result.paciente_tem_genes ? "Sim" : "Não"}
-                            </span>
-                          </div>
-                          <div className="info-item">
-                            <span className="label">BRCA1 encontrado:</span>
-                            <span className={`value ${result.referencias_encontradas?.BRCA1 ? 'positive' : 'negative'}`}>
-                              {result.referencias_encontradas?.BRCA1 ? "Sim" : "Não"}
-                            </span>
-                          </div>
-                          <div className="info-item">
-                            <span className="label">BRCA2 encontrado:</span>
-                            <span className={`value ${result.referencias_encontradas?.BRCA2 ? 'positive' : 'negative'}`}>
-                              {result.referencias_encontradas?.BRCA2 ? "Sim" : "Não"}
-                            </span>
-                          </div>
-                          <div className="info-item">
-                            <span className="label">Painel total:</span>
-                            <span className="value highlight">
-                              {result.painel_genetico?.total_percent}%
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="result-card">
-                        <h4>Painel Genético</h4>
-                        <div className="panel-info">
-                          {result.painel_genetico?.por_membro &&
-                            Object.entries(result.painel_genetico.por_membro).map(([key, value]) => (
-                              <div key={key} className="panel-item">
-                                <span className="generation">{key}:</span>
-                                <span className="percentage">{value}%</span>
-                              </div>
-                            ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="message-card">
-                      <h4>Mensagem Informativa</h4>
-                      <div className="message-content">
-                        {result.mensagem_informativa
-                          ?.split("\n")
-                          .map((line, idx) => (
-                            <p key={idx}>{line}</p>
-                          ))}
-                      </div>
-                    </div>
-
-                    <details className="debug-section">
-                      <summary>🔍 Detalhes Técnicos (JSON)</summary>
-                      <pre className="debug-content">
-                        {JSON.stringify(result, null, 2)}
-                      </pre>
-                    </details>
-                  </div>
-                )}
-              </div>
-            )}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
+      
+      <style jsx>{`
+        @import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap');
+        .font-ubuntu { font-family: 'Ubuntu', sans-serif; }
+      `}</style>
     </div>
   );
 };
 
-export default ProfilePage;
+export default Perfil;

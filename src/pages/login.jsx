@@ -6,7 +6,7 @@ import logo from '../assets/logo.png';
 export default function Login() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
-  const [tipoUsuario, setTipoUsuario] = useState("paciente"); // 'paciente' | 'profissional'
+  const [tipoUsuario, setTipoUsuario] = useState("paciente"); 
   const [senhaVisivel, setSenhaVisivel] = useState(false);
   const [alerta, setAlerta] = useState(null);
   const [carregando, setCarregando] = useState(false);
@@ -91,7 +91,7 @@ export default function Login() {
 
       {/* Lado Esquerdo - Branding */}
       <div className="hidden md:flex flex-col items-center justify-center  text-white bg-[#00817d]">
-        <div className="text-center">
+        <div className="flex flex-col items-center justify-center">
           <img src={logo} alt="Logo GenoWeb" className="w-40 h-40 mb-4" />
           <h1 className="text-5xl font-bold font-ubuntu mb-4">GenoWeb</h1>
         </div>
@@ -157,18 +157,11 @@ export default function Login() {
                 </div>
               </div>
 
-              {/* Link de recuperação de senha */}
-              <div className="text-right">
-                <a href="/recuperar-senha" className="text-sm text-[#00817d] hover:underline">
-                  Esqueceu sua senha?
-                </a>
-              </div>
-
               {/* Botão de Login */}
               <button
                 type="submit"
                 disabled={carregando}
-                className="w-full bg-[#00817d] text-white py-3 rounded-xl font-medium hover:bg-[#8B6BFF] disabled:opacity-50 disabled:cursor-not-allowed transition shadow-lg hover:shadow-xl"
+                className="w-full bg-[#00817d] text-white py-3 rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed transition shadow-lg hover:shadow-xl"
               >
                 {carregando ? "Entrando..." : "Entrar"}
               </button>

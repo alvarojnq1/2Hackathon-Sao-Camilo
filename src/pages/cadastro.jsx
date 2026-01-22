@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { authService } from '../services/api';
+import logo from '../assets/logo.png';
 
 export default function Cadastro() {
   const [formData, setFormData] = useState({
@@ -132,9 +133,9 @@ export default function Cadastro() {
       <button
         type="button"
         onClick={() => handleChange('tipo', tipo)}
-        className={`flex-1 py-3 rounded-full font-medium transition-all ${
+        className={`w-1/2 py-3 rounded-full font-ubuntu text-sm md:text-base transition-all ${
           selecionado 
-            ? "bg-[#9B7BFF] text-white shadow-lg" 
+            ? "bg-[#00817d] text-white shadow-lg" 
             : "bg-gray-100 text-gray-600 hover:bg-gray-200"
         }`}
       >
@@ -149,173 +150,187 @@ export default function Cadastro() {
   const dataMaxima = new Date(hoje.getFullYear() - 1, hoje.getMonth(), hoje.getDate());
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-6">
+    <div className="min-h-screen grid grid-cols-1 md:grid-cols-2 bg-gradient-to-br from-blue-50 to-purple-50">
       {/* Alerta */}
       {alerta && (
         <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 animate-fade-in">
           <div
             className={`px-6 py-3 rounded-lg shadow-lg ${
               alerta.sucesso ? "bg-green-500" : "bg-red-500"
-            } text-white font-medium flex items-center gap-2`}
+            } text-white font-ubuntu flex items-center gap-2`}
           >
             {alerta.sucesso ? "✅" : "❌"} {alerta.mensagem}
           </div>
         </div>
       )}
 
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-3xl shadow-2xl p-8">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <div className="w-20 h-20 bg-[#9B7BFF] rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <span className="text-white text-2xl">🧬</span>
-            </div>
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">Criar Conta</h1>
-            <p className="text-gray-600">Junte-se à nossa plataforma</p>
-          </div>
+      {/* Lado Esquerdo - Branding (Igual ao Login) */}
+      <div className="hidden md:flex flex-col items-center justify-center text-white bg-[#00817d]">
+        <div className="flex flex-col items-center justify-center">
+          <img src={logo} alt="Logo GenoWeb" className="w-40 h-40 mb-4" />
+          <h1 className="text-5xl font-bold font-ubuntu mb-4">GenoWeb</h1>
+        </div>
+      </div>
 
-          {/* Seletor de Tipo */}
-          <div className="bg-gray-100 rounded-full p-1 flex gap-1 mb-6">
-            <TipoUsuarioBotao tipo="paciente" label="Paciente" />
-            <TipoUsuarioBotao tipo="profissional" label="Profissional" />
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Nome */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nome Completo *
-              </label>
-              <input
-                type="text"
-                value={formData.nome}
-                onChange={(e) => handleChange('nome', e.target.value)}
-                placeholder="Seu nome completo"
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B7BFF] focus:border-transparent transition"
-                required
-              />
+      {/* Lado Direito - Formulário */}
+      <div className="flex items-center justify-center p-6">
+        <div className="w-full max-w-md">
+          <div className="bg-white rounded-3xl shadow-2xl p-8">
+            {/* Header */}
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold font-ubuntu text-gray-800 mb-2">Criar Conta</h2>
+              <p className="text-gray-600">Junte-se à nossa plataforma</p>
             </div>
 
-            {/* Email */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email *
-              </label>
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) => handleChange('email', e.target.value)}
-                placeholder="seu@email.com"
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B7BFF] focus:border-transparent transition"
-                required
-              />
+            {/* Seletor de Tipo */}
+            <div className="bg-gray-100 rounded-full p-1 flex mb-6">
+              <TipoUsuarioBotao tipo="paciente" label="Paciente" />
+              <TipoUsuarioBotao tipo="profissional" label="Profissional" />
             </div>
 
-            {/* Data de Nascimento (apenas para pacientes) */}
-            {formData.tipo === 'paciente' && (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Nome */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Data de Nascimento *
+                  Nome Completo *
                 </label>
                 <input
-                  type="date"
-                  value={formData.data_nascimento}
-                  onChange={(e) => handleChange('data_nascimento', e.target.value)}
-                  min={dataMinima.toISOString().split('T')[0]}
-                  max={dataMaxima.toISOString().split('T')[0]}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B7BFF] focus:border-transparent transition"
+                  type="text"
+                  value={formData.nome}
+                  onChange={(e) => handleChange('nome', e.target.value)}
+                  placeholder="Seu nome completo"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00817d] focus:border-transparent transition"
                   required
                 />
+              </div>
+
+              {/* Email */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email *
+                </label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleChange('email', e.target.value)}
+                  placeholder="seu@email.com"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00817d] focus:border-transparent transition"
+                  required
+                />
+              </div>
+
+              {/* Data de Nascimento (apenas para pacientes) */}
+              {formData.tipo === 'paciente' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Data de Nascimento *
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.data_nascimento}
+                    onChange={(e) => handleChange('data_nascimento', e.target.value)}
+                    min={dataMinima.toISOString().split('T')[0]}
+                    max={dataMaxima.toISOString().split('T')[0]}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00817d] focus:border-transparent transition"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Data de nascimento é obrigatória para pacientes
+                  </p>
+                </div>
+              )}
+
+              {/* Sexo (apenas para pacientes) */}
+              {formData.tipo === 'paciente' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Sexo *
+                  </label>
+                  <select
+                    value={formData.sexo}
+                    onChange={(e) => handleChange('sexo', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00817d] focus:border-transparent transition"
+                    required
+                  >
+                    <option value="">Selecione</option>
+                    <option value="M">Masculino</option>
+                    <option value="F">Feminino</option>
+                  </select>
+                </div>
+              )}
+
+              {/* Senha */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Senha *
+                </label>
+                <div className="relative">
+                  <input
+                    type={senhaVisivel ? "text" : "password"}
+                    value={formData.senha}
+                    onChange={(e) => handleChange('senha', e.target.value)}
+                    placeholder="Crie uma senha forte"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00817d] focus:border-transparent transition pr-12"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setSenhaVisivel(!senhaVisivel)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+                  >
+                    {senhaVisivel ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  Data de nascimento é obrigatória para pacientes
+                  Mínimo 8 caracteres, 1 maiúscula, 1 número e 1 símbolo
                 </p>
               </div>
-            )}
 
-            {/* Sexo (apenas para pacientes) */}
-            {formData.tipo === 'paciente' && (
+              {/* Confirmar Senha */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Sexo *
+                  Confirmar Senha *
                 </label>
-                <select
-                  value={formData.sexo}
-                  onChange={(e) => handleChange('sexo', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B7BFF] focus:border-transparent transition"
-                  required
-                >
-                  <option value="">Selecione</option>
-                  <option value="M">Masculino</option>
-                  <option value="F">Feminino</option>
-                </select>
-              </div>
-            )}
-
-            {/* Senha */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Senha *
-              </label>
-              <div className="relative">
                 <input
                   type={senhaVisivel ? "text" : "password"}
-                  value={formData.senha}
-                  onChange={(e) => handleChange('senha', e.target.value)}
-                  placeholder="Crie uma senha forte"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B7BFF] focus:border-transparent transition pr-12"
+                  value={formData.confirmarSenha}
+                  onChange={(e) => handleChange('confirmarSenha', e.target.value)}
+                  placeholder="Repita sua senha"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00817d] focus:border-transparent transition"
                   required
                 />
-                <button
-                  type="button"
-                  onClick={() => setSenhaVisivel(!senhaVisivel)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
-                >
-                  {senhaVisivel ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
               </div>
-              <p className="text-xs text-gray-500 mt-1">
-                Mínimo 8 caracteres, 1 maiúscula, 1 número e 1 símbolo
-              </p>
-            </div>
 
-            {/* Confirmar Senha */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Confirmar Senha *
-              </label>
-              <input
-                type={senhaVisivel ? "text" : "password"}
-                value={formData.confirmarSenha}
-                onChange={(e) => handleChange('confirmarSenha', e.target.value)}
-                placeholder="Repita sua senha"
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9B7BFF] focus:border-transparent transition"
-                required
-              />
-            </div>
+              {/* Botão de Cadastro */}
+              <button
+                type="submit"
+                disabled={carregando}
+                className="w-full bg-[#00817d] text-white py-3 rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed transition shadow-lg hover:shadow-xl mt-6"
+              >
+                {carregando ? "Cadastrando..." : "Criar Conta"}
+              </button>
 
-            {/* Botão de Cadastro */}
-            <button
-              type="submit"
-              disabled={carregando}
-              className="w-full bg-[#9B7BFF] text-white py-3 rounded-xl font-medium hover:bg-[#8B6BFF] disabled:opacity-50 disabled:cursor-not-allowed transition shadow-lg hover:shadow-xl mt-6"
-            >
-              {carregando ? "Cadastrando..." : "Criar Conta"}
-            </button>
-
-            {/* Link para login */}
-            <div className="text-center">
-              <p className="text-gray-600">
-                Já tem uma conta?{" "}
-                <a href="/login" className="text-[#9B7BFF] hover:underline font-medium">
-                  Fazer login
-                </a>
-              </p>
-            </div>
-          </form>
+              {/* Link para login */}
+              <div className="text-center">
+                <p className="text-gray-600">
+                  Já tem uma conta?{" "}
+                  <a href="/login" className="text-[#00817d] hover:underline font-medium">
+                    Fazer login
+                  </a>
+                </p>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
 
       <style jsx>{`
+        @import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&display=swap');
+        
+        .font-ubuntu {
+          font-family: 'Ubuntu', sans-serif;
+        }
+
         @keyframes fade-in {
           from {
             opacity: 0;
